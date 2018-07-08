@@ -14,3 +14,7 @@ Please consider this if you adopt this library in your project.
 * Reference test vectors needed: It has been difficult to implement due to a lack of reference test byte streams in the 
 standards documentation. Test driven development has been extremely challenging without these.
 If you are aware of and reference test vector sources for NDR encoding please let me know by raising an issue with the details. Thanks!
+
+## References
+* [Open Group RPC Publication](http://pubs.opengroup.org/onlinepubs/9629399/)
+* [Microsoft RPC Documentation](https://docs.microsoft.com/en-us/windows/desktop/Rpc/rpc-start-page)
