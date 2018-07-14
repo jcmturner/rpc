@@ -112,8 +112,6 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 			}
 		}
 		v.Set(reflect.ValueOf(s))
-	case reflect.Slice:
-
 	case reflect.Float32:
 		i, err := dec.readFloat32()
 		if err != nil {
@@ -126,6 +124,9 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 			return fmt.Errorf("could not fill %v", v)
 		}
 		v.Set(reflect.ValueOf(i))
+	case reflect.Array:
+
+	case reflect.Slice:
 	default:
 		return errors.New("unsupported type")
 	}
