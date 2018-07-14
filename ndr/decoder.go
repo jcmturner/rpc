@@ -6,28 +6,21 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"sync"
 )
 
 const (
 	defaultAlignment = 4
+	TagConformant    = "conformant"
+	TagVarying       = "varying"
 )
 
 type Decoder struct {
-	mutex  sync.Mutex    // each item must be received atomically
-	r      *bufio.Reader // source of the data
-	size   int           //initial size of bytes in buffer
-	align  int
-	ch     CommonHeader
-	ph     PrivateHeader
-	fields []field
-	err    error
-}
-
-type field struct {
-	Name string
-	Type string
-	Tags string
+	//mutex sync.Mutex    // each item must be received atomically
+	r     *bufio.Reader // source of the data
+	size  int           // initial size of bytes in buffer
+	align int           // the alignment multiple
+	ch    CommonHeader  // NDR common header
+	ph    PrivateHeader // NDR private header
 }
 
 func NewDecoder(r io.Reader, align int) *Decoder {
@@ -54,16 +47,22 @@ func (dec *Decoder) Decode(s interface{}) error {
 	if err != nil {
 		return Malformed{fmt.Sprintf("unable to process byte stream: %v", err)}
 	}
-	dec.fill(s)
-	return nil
+	return dec.fill(s, reflect.StructTag(""))
 }
 
-func (dec *Decoder) fill(s interface{}) error {
-	v := reflect.ValueOf(&s).Elem()
+func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
+	var v reflect.Value
+	if r, ok := s.(reflect.Value); ok {
+		v = r
+	} else {
+		if reflect.ValueOf(s).Kind() == reflect.Ptr {
+			v = reflect.ValueOf(s).Elem()
+		}
+	}
 	switch v.Kind() {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
-			dec.fill(v.Field(i))
+			dec.fill(v.Field(i), v.Type().Field(i).Tag)
 		}
 	case reflect.Bool:
 		i, err := dec.readBool()
@@ -96,13 +95,37 @@ func (dec *Decoder) fill(s interface{}) error {
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.String:
-
+		ndrTag := parseTags(tag)
+		conformant := ndrTag.HasValue(TagConformant)
+		// strings are always varying so this is assumed
+		var s string
+		var err error
+		if conformant {
+			s, err = dec.readConformantVaryingString()
+			if err != nil {
+				return fmt.Errorf("could not fill with conformant varying string %v", v)
+			}
+		} else {
+			s, err = dec.readVaryingString()
+			if err != nil {
+				return fmt.Errorf("could not fill with varying string %v", v)
+			}
+		}
+		v.Set(reflect.ValueOf(s))
 	case reflect.Slice:
 
 	case reflect.Float32:
-
+		i, err := dec.readFloat32()
+		if err != nil {
+			return fmt.Errorf("could not fill %v", v)
+		}
+		v.Set(reflect.ValueOf(i))
 	case reflect.Float64:
-
+		i, err := dec.readFloat64()
+		if err != nil {
+			return fmt.Errorf("could not fill %v", v)
+		}
+		v.Set(reflect.ValueOf(i))
 	default:
 		return errors.New("unsupported type")
 	}

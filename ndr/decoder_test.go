@@ -3,32 +3,10 @@ package ndr
 import (
 	"bytes"
 	"encoding/hex"
-	"reflect"
 	"testing"
+
+	"gopkg.in/jcmturner/gokrb5.v5/mstypes"
 )
-
-type NDRStruct struct {
-	Count    int64 `ndr:"value,key:val"`
-	Num      uint32
-	ArrayPtr Ptr
-}
-
-func TestTemp(t *testing.T) {
-	var n NDRStruct
-	//dec := NewDecoder(bytes.NewReader([]byte{1,0,0,0,20,0,1,0}))
-
-	t.Logf("Type: %+v\n", reflect.TypeOf(n))
-	t.Logf("Kind %+v\n", reflect.TypeOf(n).Kind())
-	t.Logf("Name %+v\n", reflect.TypeOf(n).Name())
-	t.Logf("Field 0 %+v\n", reflect.TypeOf(n).Field(0))
-	t.Logf("Field 1 %+v\n", reflect.TypeOf(n).Field(1))
-	t.Logf("NumField %+v\n", reflect.TypeOf(n).NumField())
-
-	t.Logf("Value: %+v\n", reflect.ValueOf(&n).Elem())
-	reflect.ValueOf(&n).Elem().Field(1).Set(reflect.ValueOf(uint32(1)))
-
-	t.Logf("ST: %+v\n", n)
-}
 
 func TestReadCommonHeader(t *testing.T) {
 	var tests = []struct {
@@ -95,4 +73,20 @@ func TestReadPrivateHeader(t *testing.T) {
 			t.Errorf("Objectbuffer length expected %d actual %d", test.Length, dec.ph.ObjectBufferLength)
 		}
 	}
+}
+
+func TestDecode(t *testing.T) {
+	hexstr := "01100800cccccccca00400000000000000000200d186660f"
+	b, _ := hex.DecodeString(hexstr)
+	ft := new(mstypes.FileTime)
+	dec := NewDecoder(bytes.NewReader(b), 4)
+	err := dec.Decode(ft)
+	if err != nil {
+		t.Fatalf("error decoding: %v", err)
+	}
+	t.Logf("FT: %+v %v\n", ft, ft.Time())
+
+	p := 20
+	fto := mstypes.ReadFileTime(&b, &p, &dec.ch.Endianness)
+	t.Logf("FTO: %+v %v\n", fto, fto.Time())
 }

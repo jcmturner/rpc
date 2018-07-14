@@ -28,12 +28,12 @@ const (
 	commonHeaderBytes uint16 = 8
 	bigEndian                = 0
 	littleEndian             = 1
-	ascii                    = 0
-	ebcdic                   = 1
-	ieee                     = 0
-	vax                      = 1
-	cray                     = 2
-	ibm                      = 3
+	ascii             uint8  = 0
+	ebcdic            uint8  = 1
+	ieee              uint8  = 0
+	vax               uint8  = 1
+	cray              uint8  = 2
+	ibm               uint8  = 3
 )
 
 // CommonHeader implements the NDR common header: https://msdn.microsoft.com/en-us/library/cc243889.aspx

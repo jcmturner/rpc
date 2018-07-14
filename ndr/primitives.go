@@ -1,5 +1,9 @@
 package ndr
 
+import (
+	"math"
+)
+
 const (
 	SizeBool   = 1
 	SizeChar   = 1
@@ -97,4 +101,27 @@ func (dec *Decoder) readUint64() (uint64, error) {
 	}
 	dec.ensureAlignment()
 	return dec.ch.Endianness.Uint64(b), nil
+}
+
+// https://en.wikipedia.org/wiki/IEEE_754-1985
+func (dec *Decoder) readFloat32() (f float32, err error) {
+	b, err := dec.readBytes(SizeSingle)
+	if err != nil {
+		return
+	}
+	bits := dec.ch.Endianness.Uint32(b)
+	f = math.Float32frombits(bits)
+	dec.ensureAlignment()
+	return
+}
+
+func (dec *Decoder) readFloat64() (f float64, err error) {
+	b, err := dec.readBytes(SizeDouble)
+	if err != nil {
+		return
+	}
+	bits := dec.ch.Endianness.Uint64(b)
+	f = math.Float64frombits(bits)
+	dec.ensureAlignment()
+	return
 }
