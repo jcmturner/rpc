@@ -9,5 +9,10 @@ type Malformed struct {
 
 // Error implements the error interface on the Malformed struct.
 func (e Malformed) Error() string {
-	return fmt.Sprintf("malformed NDR steam: %s", e.EText)
+	return fmt.Sprintf("malformed NDR stream: %s", e.EText)
+}
+
+// Errorf formats an error message into a malformed NDR error.
+func Errorf(format string, a ...interface{}) Malformed {
+	return Malformed{EText: fmt.Sprintf(format, a...)}
 }

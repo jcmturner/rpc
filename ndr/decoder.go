@@ -2,7 +2,6 @@ package ndr
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -62,36 +61,39 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 	switch v.Kind() {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
-			dec.fill(v.Field(i), v.Type().Field(i).Tag)
+			err := dec.fill(v.Field(i), v.Type().Field(i).Tag)
+			if err != nil {
+				return Errorf("could not fill struct field(%d): %v", i, err)
+			}
 		}
 	case reflect.Bool:
 		i, err := dec.readBool()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint8:
 		i, err := dec.readUint8()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint16:
 		i, err := dec.readUint16()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint32:
 		i, err := dec.readUint32()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint64:
 		i, err := dec.readUint64()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.String:
@@ -103,32 +105,35 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 		if conformant {
 			s, err = dec.readConformantVaryingString()
 			if err != nil {
-				return fmt.Errorf("could not fill with conformant varying string %v", v)
+				return Errorf("could not fill with conformant varying string: %v", err)
 			}
 		} else {
 			s, err = dec.readVaryingString()
 			if err != nil {
-				return fmt.Errorf("could not fill with varying string %v", v)
+				return Errorf("could not fill with varying string: %v", err)
 			}
 		}
 		v.Set(reflect.ValueOf(s))
 	case reflect.Float32:
 		i, err := dec.readFloat32()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Float64:
 		i, err := dec.readFloat64()
 		if err != nil {
-			return fmt.Errorf("could not fill %v", v)
+			return Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Array:
-
+		err := dec.fillUniDimensionalFixedArray(v, tag)
+		if err != nil {
+			return err
+		}
 	case reflect.Slice:
 	default:
-		return errors.New("unsupported type")
+		return Errorf("unsupported type")
 	}
 	return nil
 }
@@ -144,7 +149,7 @@ func (dec *Decoder) readBytes(n int) ([]byte, error) {
 	b := make([]byte, n, n)
 	m, err := dec.r.Read(b)
 	if err != nil || m != n {
-		return b, Malformed{EText: fmt.Sprintf("could not read bytes from stream: %v", err)}
+		return b, fmt.Errorf("error reading bytes from stream: %v", err)
 	}
 	return b, nil
 }

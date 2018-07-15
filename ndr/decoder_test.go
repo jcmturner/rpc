@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"gopkg.in/jcmturner/gokrb5.v5/mstypes"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestReadCommonHeader(t *testing.T) {
@@ -75,18 +75,31 @@ func TestReadPrivateHeader(t *testing.T) {
 	}
 }
 
-func TestDecode(t *testing.T) {
-	hexstr := "01100800cccccccca00400000000000000000200d186660f"
-	b, _ := hex.DecodeString(hexstr)
-	ft := new(mstypes.FileTime)
+type SimpleTest struct {
+	A uint32
+	B uint32
+}
+
+func TestBasicDecode(t *testing.T) {
+	hexStr := "01100800cccccccca00400000000000000000200d186660f656ac601"
+	b, _ := hex.DecodeString(hexStr)
+	ft := new(SimpleTest)
 	dec := NewDecoder(bytes.NewReader(b), 4)
 	err := dec.Decode(ft)
 	if err != nil {
 		t.Fatalf("error decoding: %v", err)
 	}
-	t.Logf("FT: %+v %v\n", ft, ft.Time())
+	assert.Equal(t, uint32(258377425), ft.A, "Value of field A not as expected")
+	assert.Equal(t, uint32(29780581), ft.B, "Value of field B not as expected %d")
+}
 
-	p := 20
-	fto := mstypes.ReadFileTime(&b, &p, &dec.ch.Endianness)
-	t.Logf("FTO: %+v %v\n", fto, fto.Time())
+func TestBasicDecodeOverRun(t *testing.T) {
+	hexStr := "01100800cccccccca00400000000000000000200d186660f"
+	b, _ := hex.DecodeString(hexStr)
+	ft := new(SimpleTest)
+	dec := NewDecoder(bytes.NewReader(b), 4)
+	err := dec.Decode(ft)
+	if err == nil {
+		t.Errorf("Expected error for trying to read more than the bytes we have")
+	}
 }
