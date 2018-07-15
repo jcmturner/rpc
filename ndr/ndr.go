@@ -28,6 +28,81 @@ Private Header - https://msdn.microsoft.com/en-us/library/cc243919.aspx
 - Second 4 bytes - Filler: MUST be set to 0 (zero) during marshaling, and SHOULD be ignored during unmarshaling.
 */
 
+const (
+	privateHeaderBytes = 8
+)
+
+// ReadHeaders processes the bytes to return the NDR Common and Private headers.
+func ReadHeaders(b *[]byte) (CommonHeader, PrivateHeader, int, error) {
+	ch, p, err := GetCommonHeader(b)
+	if err != nil {
+		return CommonHeader{}, PrivateHeader{}, 0, err
+	}
+	ph, err := GetPrivateHeader(b, &p, &ch.Endianness)
+	if err != nil {
+		return CommonHeader{}, PrivateHeader{}, 0, err
+	}
+	return ch, ph, p, err
+}
+
+// GetCommonHeader processes the bytes to return the NDR Common header.
+func GetCommonHeader(b *[]byte) (CommonHeader, int, error) {
+	//The first 8 bytes comprise the Common RPC Header for type marshalling.
+	if len(*b) < int(commonHeaderBytes) {
+		return CommonHeader{}, 0, Malformed{EText: "Not enough bytes."}
+	}
+	if (*b)[0] != protocolVersion {
+		return CommonHeader{}, 0, Malformed{EText: fmt.Sprintf("Stream does not indicate a RPC Type serialization of version %v", protocolVersion)}
+	}
+	endian := int((*b)[1] >> 4 & 0xF)
+	if endian != 0 && endian != 1 {
+		return CommonHeader{}, 1, Malformed{EText: "Common header does not indicate a valid endianness"}
+	}
+	charEncoding := uint8((*b)[1] & 0xF)
+	if charEncoding != 0 && charEncoding != 1 {
+		return CommonHeader{}, 1, Malformed{EText: "Common header does not indicate a valid charater encoding"}
+	}
+	var bo binary.ByteOrder
+	switch endian {
+	case littleEndian:
+		bo = binary.LittleEndian
+	case bigEndian:
+		bo = binary.BigEndian
+	}
+	l := bo.Uint16((*b)[2:4])
+	if l != commonHeaderBytes {
+		return CommonHeader{}, 4, Malformed{EText: fmt.Sprintf("Common header does not indicate a valid length: %v instead of %v", uint8((*b)[3]), commonHeaderBytes)}
+	}
+
+	return CommonHeader{
+		Version:           uint8((*b)[0]),
+		Endianness:        bo,
+		CharacterEncoding: charEncoding,
+		//FloatRepresentation: uint8(b[2]),
+		HeaderLength: l,
+		Filler:       (*b)[4:8],
+	}, 8, nil
+}
+
+// GetPrivateHeader processes the bytes to return the NDR Private header.
+func GetPrivateHeader(b *[]byte, p *int, bo *binary.ByteOrder) (PrivateHeader, error) {
+	//The next 8 bytes comprise the RPC type marshalling private header for constructed types.
+	if len(*b) < (privateHeaderBytes) {
+		return PrivateHeader{}, Malformed{EText: "Not enough bytes."}
+	}
+	var l uint32
+	buf := bytes.NewBuffer((*b)[*p : *p+4])
+	binary.Read(buf, *bo, &l)
+	if l%8 != 0 {
+		return PrivateHeader{}, Malformed{EText: "Object buffer length not a multiple of 8"}
+	}
+	*p += 8
+	return PrivateHeader{
+		ObjectBufferLength: l,
+		Filler:             (*b)[4:8],
+	}, nil
+}
+
 // ReadUint8 reads bytes representing a thirty two bit integer.
 func ReadUint8(b *[]byte, p *int) (i uint8) {
 	if len((*b)[*p:]) < 1 {
