@@ -132,6 +132,27 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 			return err
 		}
 	case reflect.Slice:
+		ndrTag := parseTags(tag)
+		conformant := ndrTag.HasValue(TagConformant)
+		varying := ndrTag.HasValue(TagVarying)
+		// varying is assumed as fixed arrays use the Go array type rather than slice
+		if conformant && varying {
+			err := dec.fillUniDimensionalConformantVaryingArray(v, tag)
+			if err != nil {
+				return err
+			}
+		} else if !conformant && varying {
+			err := dec.fillUniDimensionalVaryingArray(v, tag)
+			if err != nil {
+				return err
+			}
+		} else {
+			//default to conformant and not varying
+			err := dec.fillUniDimensionalConformantArray(v, tag)
+			if err != nil {
+				return err
+			}
+		}
 	default:
 		return Errorf("unsupported type")
 	}
