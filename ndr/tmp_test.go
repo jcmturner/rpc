@@ -1,6 +1,8 @@
 package ndr
 
 import (
+	"encoding/hex"
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -18,7 +20,11 @@ func TestTmp(t *testing.T) {
 	t.Logf("%v\n", reflect.ValueOf(a).Index(0))        //new v
 	t.Logf("%v\n", reflect.ValueOf(a).Index(0).Type()) //new t
 
-	n, v, ta := parseDimensions(reflect.ValueOf(a), reflect.TypeOf(a))
-	t.Logf("d: %v %v %v\n", n, v, ta)
-
+	i := []int{2, 3, 2}
+	t.Logf("%v\n", len(multiDimensionalIndexPermutations(i[:len(i)-1])))
+	var s string
+	for i := 1; i <= 12; i++ {
+		s = fmt.Sprintf("%s%s000000", s, hex.EncodeToString([]byte{byte(i)}))
+	}
+	t.Logf("%s\n", s)
 }

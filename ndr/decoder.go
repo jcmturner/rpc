@@ -127,7 +127,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Array:
-		err := dec.fillUniDimensionalFixedArray(v, tag)
+		err := dec.fillFixedArray(v, tag)
 		if err != nil {
 			return err
 		}
