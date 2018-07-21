@@ -18,3 +18,33 @@ If you are aware of and reference test vector sources for NDR encoding please le
 ## References
 * [Open Group RPC Publication](http://pubs.opengroup.org/onlinepubs/9629399/)
 * [Microsoft RPC Documentation](https://docs.microsoft.com/en-us/windows/desktop/Rpc/rpc-start-page)
+
+## NDR Decode Capability Checklist
+- [x] Format label
+- [x] Boolean
+- [ ] Character
+- [x] Unsigned small integer
+- [x] Unsigned short integer
+- [x] Unsigned long integer
+- [x] Unsigned hyper integer
+- [ ] Signed small integer
+- [ ] Signed short integer
+- [ ] Signed long integer
+- [ ] Signed hyper integer
+- [x] Single float
+- [x] Double float
+- [x] Uni-dimensional fixed array
+- [x] Multi-dimensional fixed array
+- [x] Uni-dimensional conformant array
+- [ ] Multi-dimensional conformant array
+- [x] Uni-dimensional conformant varying array
+- [ ] Multi-dimensional conformant varying array
+- [ ] Varying string
+- [ ] Conformant varying string
+- [ ] Array of strings
+- [ ] Union
+- [ ] Pipe
+- [ ] Top level full pointer
+- [ ] Top level reference pointer
+- [ ] Embedded full pointer
+- [ ] Embedded reference pointer
