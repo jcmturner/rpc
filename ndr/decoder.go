@@ -148,7 +148,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 			}
 		} else {
 			//default to conformant and not varying
-			err := dec.fillUniDimensionalConformantArray(v, tag)
+			err := dec.fillConformantArray(v, tag)
 			if err != nil {
 				return err
 			}

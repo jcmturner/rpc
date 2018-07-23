@@ -5,21 +5,6 @@ import (
 	"testing"
 )
 
-// d starts at 1
-func makeSubSlices(t *testing.T, v reflect.Value, l []int) {
-	t.Logf("l : %v\n", l)
-	ty := v.Type().Elem()
-	for i := 0; i < l[0]; i++ {
-		t.Logf("Making slice %+v %d - i:%d l:%v\n", ty, l[0], i, l)
-		s := reflect.MakeSlice(ty, l[1], l[1])
-		v.Index(i).Set(s)
-		if len(l[1:]) > 1 {
-			makeSubSlices(t, v.Index(i), l[1:])
-		}
-	}
-	return
-}
-
 type TmpStruct struct {
 	A [][][][]int
 }
@@ -35,7 +20,7 @@ func TestTmp(t *testing.T) {
 	s := reflect.MakeSlice(ty, l[0], l[0])
 
 	v.Set(s)
-	makeSubSlices(t, v, l)
+	makeSubSlices(v, l[1:])
 	t.Logf("%+v\n", a)
 
 	//a := [][][][]int{}

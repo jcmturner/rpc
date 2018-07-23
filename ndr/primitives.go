@@ -63,6 +63,16 @@ func (dec *Decoder) readBool() (bool, error) {
 	return false, nil
 }
 
+// readChar reads bytes representing a 8bit ASCII integer cast to a rune.
+func (dec *Decoder) readChar() (rune, error) {
+	var r rune
+	a, err := dec.readUint8()
+	if err != nil {
+		return r, err
+	}
+	return rune(a), nil
+}
+
 // readUint8 reads bytes representing a 8bit unsigned integer.
 func (dec *Decoder) readUint8() (uint8, error) {
 	b, err := dec.r.ReadByte()

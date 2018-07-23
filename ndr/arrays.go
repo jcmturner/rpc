@@ -4,7 +4,21 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 )
+
+func intFromTag(tag reflect.StructTag, key string) (int, error) {
+	ndrTag := parseTags(tag)
+	d := 1
+	if n, ok := ndrTag.Map[key]; ok {
+		i, err := strconv.Atoi(n)
+		if err != nil {
+			return d, fmt.Errorf("invalid dimensions tag [%s]: %v", n, err)
+		}
+		d = i
+	}
+	return d, nil
+}
 
 // parseDimensions returns the a slice of the size of each dimension and type of the member at the deepest level.
 func parseDimensions(v reflect.Value) (l []int, tb reflect.Type) {
@@ -26,6 +40,36 @@ func parseDimensions(v reflect.Value) (l []int, tb reflect.Type) {
 		l = append(l, m...)
 	} else {
 		tb = t.Elem()
+	}
+	return
+}
+
+func sliceDimensions(t reflect.Type) (d int) {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() == reflect.Slice {
+		d++
+		n := sliceDimensions(t.Elem())
+		d += n
+	}
+	return d
+}
+
+// makeSubSlices is a deep recursive creation/initialisation of multi-dimensional slices.
+// Takes the reflect.Value of the 1st dimension and a slice of the lengths of the sub dimensions
+func makeSubSlices(v reflect.Value, l []int) {
+	ty := v.Type().Elem()
+	if ty.Kind() != reflect.Slice {
+		return
+	}
+	for i := 0; i < v.Len(); i++ {
+		s := reflect.MakeSlice(ty, l[0], l[0])
+		v.Index(i).Set(s)
+		// Are there more sub dimensions?
+		if len(l) > 1 {
+			makeSubSlices(v.Index(i), l[1:])
+		}
 	}
 	return
 }
@@ -106,6 +150,56 @@ func (dec *Decoder) fillUniDimensionalConformantArray(v reflect.Value, tag refle
 		}
 	}
 	v.Set(a)
+	return nil
+}
+
+func (dec *Decoder) fillMultiDimensionalConformantArray(v reflect.Value, d int, tag reflect.StructTag) error {
+	// Read the size of each dimensions from the ndr stream
+	l := make([]int, d, d)
+	for i := range l {
+		s, err := dec.readUint32()
+		if err != nil {
+			return fmt.Errorf("could not read size of dimension %d: %v", i+1, err)
+		}
+		l[i] = int(s)
+	}
+
+	// Initialise size of slices
+	// Initialise the size of the 1st dimension
+	ty := v.Type()
+	v.Set(reflect.MakeSlice(ty, l[0], l[0]))
+	// Initialise the size of the other dimensions recursively
+	makeSubSlices(v, l[1:])
+
+	// Get all permutations of the indexes and go through each and fill
+	ps := multiDimensionalIndexPermutations(l)
+	for _, p := range ps {
+		// Get current multi-dimensional index to fill
+		a := v
+		for _, i := range p {
+			a = a.Index(i)
+		}
+		err := dec.fill(a, tag)
+		if err != nil {
+			return fmt.Errorf("could not fill index %v of multi-dimensional conformant array: %v", p, err)
+		}
+	}
+	return nil
+}
+
+func (dec *Decoder) fillConformantArray(v reflect.Value, tag reflect.StructTag) error {
+	d := sliceDimensions(v.Type())
+	if d > 1 {
+		err := dec.fillMultiDimensionalConformantArray(v, d, tag)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := dec.fillUniDimensionalConformantArray(v, tag)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

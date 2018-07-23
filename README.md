@@ -22,7 +22,7 @@ If you are aware of and reference test vector sources for NDR encoding please le
 ## NDR Decode Capability Checklist
 - [x] Format label
 - [x] Boolean
-- [ ] Character
+- [x] Character
 - [x] Unsigned small integer
 - [x] Unsigned short integer
 - [x] Unsigned long integer
@@ -36,11 +36,11 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Uni-dimensional fixed array
 - [x] Multi-dimensional fixed array
 - [x] Uni-dimensional conformant array
-- [ ] Multi-dimensional conformant array
+- [x] Multi-dimensional conformant array
 - [x] Uni-dimensional conformant varying array
 - [ ] Multi-dimensional conformant varying array
-- [ ] Varying string
-- [ ] Conformant varying string
+- [x] Varying string
+- [x] Conformant varying string
 - [ ] Array of strings
 - [ ] Union
 - [ ] Pipe
