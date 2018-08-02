@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TestHeader = "01100800cccccccca00400000000000000000200"
+
 func TestParseDimensions(t *testing.T) {
 	a := [2][2][2][]SimpleTest{}
 	l, ta := parseDimensions(reflect.ValueOf(a))
@@ -64,8 +66,16 @@ type StructWithMultiDimensionalConformantSlice struct {
 	A [][][]uint32 `ndr:"conformant,test:3"`
 }
 
+type StructWithMultiDimensionalVaryingSlice struct {
+	A [][][]uint32 `ndr:"varying"`
+}
+
+type StructWithMultiDimensionalConformantVaryingSlice struct {
+	A [][][]uint32 `ndr:"conformant,varying"`
+}
+
 func TestReadUniDimensionalFixedArray(t *testing.T) {
-	hexStr := "01100800cccccccca0040000000000000000020001000000020000000300000004000000"
+	hexStr := TestHeader + "01000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithArray)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -79,7 +89,7 @@ func TestReadUniDimensionalFixedArray(t *testing.T) {
 }
 
 func TestReadMultiDimensionalFixedArray(t *testing.T) {
-	hexStr := "01100800cccccccca004000000000000000002000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
+	hexStr := TestHeader + "0100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimArray)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -103,7 +113,7 @@ func TestReadMultiDimensionalFixedArray(t *testing.T) {
 }
 
 func TestReadUniDimensionalConformantArray(t *testing.T) {
-	hexStr := "01100800cccccccca004000000000000000002000400000001000000020000000300000004000000"
+	hexStr := TestHeader + "0400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -117,7 +127,7 @@ func TestReadUniDimensionalConformantArray(t *testing.T) {
 }
 
 func TestReadMultiDimensionalConformantArray(t *testing.T) {
-	hexStr := "01100800cccccccca004000000000000000002000200000003000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
+	hexStr := TestHeader + "0200000003000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimensionalConformantSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -141,7 +151,7 @@ func TestReadMultiDimensionalConformantArray(t *testing.T) {
 }
 
 func TestReadUniDimensionalVaryingArray(t *testing.T) {
-	hexStr := "01100800cccccccca00400000000000000000200000000000400000001000000020000000300000004000000"
+	hexStr := TestHeader + "000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithVaryingSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -154,8 +164,32 @@ func TestReadUniDimensionalVaryingArray(t *testing.T) {
 	}
 }
 
+func TestReadMultiDimensionalVaryingArray(t *testing.T) {
+	hexStr := TestHeader + "0000000002000000000000000300000000000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
+	b, _ := hex.DecodeString(hexStr)
+	a := new(StructWithMultiDimensionalVaryingSlice)
+	dec := NewDecoder(bytes.NewReader(b), 4)
+	err := dec.Decode(a)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	ar := [][][]uint32{
+		{
+			{1, 2},
+			{3, 4},
+			{5, 6},
+		},
+		{
+			{7, 8},
+			{9, 10},
+			{11, 12},
+		},
+	}
+	assert.Equal(t, ar, a.A, "multi-dimensional conformant varying array not as expected")
+}
+
 func TestReadUniDimensionalConformantVaryingArray(t *testing.T) {
-	hexStr := "01100800cccccccca0040000000000000000000004000000000000000400000001000000020000000300000004000000"
+	hexStr := TestHeader + "04000000000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantVaryingSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -166,4 +200,28 @@ func TestReadUniDimensionalConformantVaryingArray(t *testing.T) {
 	for i := range a.A {
 		assert.Equal(t, uint32(i+1), a.A[i], "Value of index %d not as expected", i)
 	}
+}
+
+func TestReadMultiDimensionalConformantVaryingArray(t *testing.T) {
+	hexStr := TestHeader + "0200000003000000020000000000000002000000000000000300000000000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
+	b, _ := hex.DecodeString(hexStr)
+	a := new(StructWithMultiDimensionalConformantVaryingSlice)
+	dec := NewDecoder(bytes.NewReader(b), 4)
+	err := dec.Decode(a)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	ar := [][][]uint32{
+		{
+			{1, 2},
+			{3, 4},
+			{5, 6},
+		},
+		{
+			{7, 8},
+			{9, 10},
+			{11, 12},
+		},
+	}
+	assert.Equal(t, ar, a.A, "multi-dimensional conformant varying array not as expected")
 }
