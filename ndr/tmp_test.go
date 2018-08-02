@@ -23,6 +23,8 @@ func TestTmp(t *testing.T) {
 	makeSubSlices(v, l[1:])
 	t.Logf("%+v\n", a)
 
+	t.Logf("permut: %v\n", multiDimensionalIndexPermutations([]int{3, 3}))
+
 	//a := [][][][]int{}
 	//l := []int{2,3,3,2}
 	//ty := reflect.ValueOf(a).Type()

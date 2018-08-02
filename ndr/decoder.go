@@ -137,12 +137,12 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 		varying := ndrTag.HasValue(TagVarying)
 		// varying is assumed as fixed arrays use the Go array type rather than slice
 		if conformant && varying {
-			err := dec.fillUniDimensionalConformantVaryingArray(v, tag)
+			err := dec.fillConformantVaryingArray(v, tag)
 			if err != nil {
 				return err
 			}
 		} else if !conformant && varying {
-			err := dec.fillUniDimensionalVaryingArray(v, tag)
+			err := dec.fillVaryingArray(v, tag)
 			if err != nil {
 				return err
 			}
