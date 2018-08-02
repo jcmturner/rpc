@@ -64,7 +64,7 @@ type StructWithMultiDimensionalConformantSlice struct {
 	A [][][]uint32 `ndr:"conformant,test:3"`
 }
 
-func TestReadUniDimensionalFixedArrary(t *testing.T) {
+func TestReadUniDimensionalFixedArray(t *testing.T) {
 	hexStr := "01100800cccccccca0040000000000000000020001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithArray)
@@ -78,7 +78,7 @@ func TestReadUniDimensionalFixedArrary(t *testing.T) {
 	}
 }
 
-func TestReadMultiDimensionalFixedArrary(t *testing.T) {
+func TestReadMultiDimensionalFixedArray(t *testing.T) {
 	hexStr := "01100800cccccccca004000000000000000002000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimArray)
@@ -102,7 +102,7 @@ func TestReadMultiDimensionalFixedArrary(t *testing.T) {
 	assert.Equal(t, ar, a.A, "multi-dimensional fixed array not as expected")
 }
 
-func TestReadUniDimensionalConformantArrary(t *testing.T) {
+func TestReadUniDimensionalConformantArray(t *testing.T) {
 	hexStr := "01100800cccccccca004000000000000000002000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantSlice)
@@ -116,7 +116,7 @@ func TestReadUniDimensionalConformantArrary(t *testing.T) {
 	}
 }
 
-func TestReadMultiDimensionalConformantArrary(t *testing.T) {
+func TestReadMultiDimensionalConformantArray(t *testing.T) {
 	hexStr := "01100800cccccccca004000000000000000002000200000003000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimensionalConformantSlice)
@@ -140,8 +140,8 @@ func TestReadMultiDimensionalConformantArrary(t *testing.T) {
 	assert.Equal(t, ar, a.A, "multi-dimensional conformant array not as expected")
 }
 
-func TestReadUniDimensionalVaryingArrary(t *testing.T) {
-	hexStr := "01100800cccccccca004000000000000000002000200000004000000000000000000000001000000020000000300000004000000"
+func TestReadUniDimensionalVaryingArray(t *testing.T) {
+	hexStr := "01100800cccccccca00400000000000000000200000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithVaryingSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
@@ -154,8 +154,8 @@ func TestReadUniDimensionalVaryingArrary(t *testing.T) {
 	}
 }
 
-func TestReadUniDimensionalConformantVaryingArrary(t *testing.T) {
-	hexStr := "01100800cccccccca00400000000000000000200060000000200000004000000000000000000000001000000020000000300000004000000"
+func TestReadUniDimensionalConformantVaryingArray(t *testing.T) {
+	hexStr := "01100800cccccccca0040000000000000000000004000000000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantVaryingSlice)
 	dec := NewDecoder(bytes.NewReader(b), 4)
