@@ -78,7 +78,7 @@ func TestReadUniDimensionalFixedArray(t *testing.T) {
 	hexStr := TestHeader + "01000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithArray)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -92,7 +92,7 @@ func TestReadMultiDimensionalFixedArray(t *testing.T) {
 	hexStr := TestHeader + "0100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimArray)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -116,7 +116,7 @@ func TestReadUniDimensionalConformantArray(t *testing.T) {
 	hexStr := TestHeader + "0400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -130,7 +130,7 @@ func TestReadMultiDimensionalConformantArray(t *testing.T) {
 	hexStr := TestHeader + "0200000003000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimensionalConformantSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -154,7 +154,7 @@ func TestReadUniDimensionalVaryingArray(t *testing.T) {
 	hexStr := TestHeader + "000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithVaryingSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -168,7 +168,7 @@ func TestReadMultiDimensionalVaryingArray(t *testing.T) {
 	hexStr := TestHeader + "0000000002000000000000000300000000000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimensionalVaryingSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -192,7 +192,7 @@ func TestReadUniDimensionalConformantVaryingArray(t *testing.T) {
 	hexStr := TestHeader + "04000000000000000400000001000000020000000300000004000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithConformantVaryingSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -206,7 +206,7 @@ func TestReadMultiDimensionalConformantVaryingArray(t *testing.T) {
 	hexStr := TestHeader + "0200000003000000020000000000000002000000000000000300000000000000020000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b0000000c0000000d0000000e0000000f000000100000001100000012000000130000001400000015000000160000001700000018000000190000001a0000001b0000001c0000001d0000001e0000001f0000002000000021000000220000002300000024000000"
 	b, _ := hex.DecodeString(hexStr)
 	a := new(StructWithMultiDimensionalConformantVaryingSlice)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)

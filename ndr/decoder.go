@@ -15,21 +15,17 @@ const (
 
 type Decoder struct {
 	//mutex sync.Mutex    // each item must be received atomically
-	r     *bufio.Reader // source of the data
-	size  int           // initial size of bytes in buffer
-	align int           // the alignment multiple
-	ch    CommonHeader  // NDR common header
-	ph    PrivateHeader // NDR private header
+	r    *bufio.Reader // source of the data
+	size int           // initial size of bytes in buffer
+	ch   CommonHeader  // NDR common header
+	ph   PrivateHeader // NDR private header
 }
 
-func NewDecoder(r io.Reader, align int) *Decoder {
+func NewDecoder(r io.Reader) *Decoder {
 	dec := new(Decoder)
 	dec.r = bufio.NewReader(r)
+	dec.r.Peek(int(commonHeaderBytes)) // For some reason an operation is needed on the buffer to initialise it so Buffered() != 0
 	dec.size = dec.r.Buffered()
-	if align != 1 && align != 2 && align != 4 && align != 8 {
-		align = defaultAlignment
-	}
-	dec.align = align
 	return dec
 }
 
@@ -166,13 +162,6 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 		return Errorf("unsupported type")
 	}
 	return nil
-}
-
-func (dec *Decoder) ensureAlignment() {
-	p := dec.size - dec.r.Buffered()
-	if s := p % dec.align; s != 0 {
-		dec.r.Discard(dec.align - s)
-	}
 }
 
 func (dec *Decoder) readBytes(n int) ([]byte, error) {

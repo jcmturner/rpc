@@ -32,9 +32,8 @@ func TestReadFloat32(t *testing.T) {
 		//t.Logf("%s %08b\n", test.hexStr,b)
 		r := bufio.NewReader(bytes.NewReader(b))
 		dec := Decoder{
-			r:     r,
-			align: 4,
-			ch:    CommonHeader{Endianness: test.order},
+			r:  r,
+			ch: CommonHeader{Endianness: test.order},
 		}
 		f, err := dec.readFloat32()
 		if err != nil {

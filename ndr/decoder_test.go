@@ -30,7 +30,7 @@ func TestReadCommonHeader(t *testing.T) {
 
 	for i, test := range tests {
 		b, _ := hex.DecodeString(test.EncodedHex)
-		dec := NewDecoder(bytes.NewReader(b), 4)
+		dec := NewDecoder(bytes.NewReader(b))
 		err := dec.readCommonHeader()
 		if err != nil && !test.ExpectFail {
 			t.Errorf("error reading common header of test %d: %v", i, err)
@@ -57,7 +57,7 @@ func TestReadPrivateHeader(t *testing.T) {
 
 	for i, test := range tests {
 		b, _ := hex.DecodeString(test.EncodedHex)
-		dec := NewDecoder(bytes.NewReader(b), 4)
+		dec := NewDecoder(bytes.NewReader(b))
 		err := dec.readCommonHeader()
 		if err != nil {
 			t.Errorf("error reading common header of test %d: %v", i, err)
@@ -84,7 +84,7 @@ func TestBasicDecode(t *testing.T) {
 	hexStr := "01100800cccccccca00400000000000000000200d186660f656ac601"
 	b, _ := hex.DecodeString(hexStr)
 	ft := new(SimpleTest)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(ft)
 	if err != nil {
 		t.Fatalf("error decoding: %v", err)
@@ -97,7 +97,7 @@ func TestBasicDecodeOverRun(t *testing.T) {
 	hexStr := "01100800cccccccca00400000000000000000200d186660f"
 	b, _ := hex.DecodeString(hexStr)
 	ft := new(SimpleTest)
-	dec := NewDecoder(bytes.NewReader(b), 4)
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(ft)
 	if err == nil {
 		t.Errorf("Expected error for trying to read more than the bytes we have")

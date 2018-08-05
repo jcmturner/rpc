@@ -79,59 +79,70 @@ func (dec *Decoder) readUint8() (uint8, error) {
 	if err != nil {
 		return uint8(0), err
 	}
-	dec.ensureAlignment()
 	return uint8(b), nil
 }
 
 // readUint16 reads bytes representing a 16bit unsigned integer.
 func (dec *Decoder) readUint16() (uint16, error) {
+	dec.ensureAlignment(SizeUint16)
 	b, err := dec.readBytes(SizeUint16)
 	if err != nil {
 		return uint16(0), err
 	}
-	dec.ensureAlignment()
 	return dec.ch.Endianness.Uint16(b), nil
 }
 
 // readUint32 reads bytes representing a 32bit unsigned integer.
 func (dec *Decoder) readUint32() (uint32, error) {
+	dec.ensureAlignment(SizeUint32)
 	b, err := dec.readBytes(SizeUint32)
 	if err != nil {
 		return uint32(0), err
 	}
-	dec.ensureAlignment()
 	return dec.ch.Endianness.Uint32(b), nil
 }
 
 // readUint32 reads bytes representing a 32bit unsigned integer.
 func (dec *Decoder) readUint64() (uint64, error) {
+	dec.ensureAlignment(SizeUint64)
 	b, err := dec.readBytes(SizeUint64)
 	if err != nil {
 		return uint64(0), err
 	}
-	dec.ensureAlignment()
 	return dec.ch.Endianness.Uint64(b), nil
 }
 
 // https://en.wikipedia.org/wiki/IEEE_754-1985
 func (dec *Decoder) readFloat32() (f float32, err error) {
+	dec.ensureAlignment(SizeSingle)
 	b, err := dec.readBytes(SizeSingle)
 	if err != nil {
 		return
 	}
 	bits := dec.ch.Endianness.Uint32(b)
 	f = math.Float32frombits(bits)
-	dec.ensureAlignment()
 	return
 }
 
 func (dec *Decoder) readFloat64() (f float64, err error) {
+	dec.ensureAlignment(SizeDouble)
 	b, err := dec.readBytes(SizeDouble)
 	if err != nil {
 		return
 	}
 	bits := dec.ch.Endianness.Uint64(b)
 	f = math.Float64frombits(bits)
-	dec.ensureAlignment()
 	return
+}
+
+// NDR enforces NDR alignment of primitive data; that is, any primitive of size n octets is aligned at a octet stream
+// index that is a multiple of n. (In this version of NDR, n is one of {1, 2, 4, 8}.) An octet stream index indicates
+// the number of an octet in an octet stream when octets are numbered, beginning with 0, from the first octet in the
+// stream. Where necessary, an alignment gap, consisting of octets of unspecified value, precedes the representation
+// of a primitive. The gap is of the smallest size sufficient to align the primitive.
+func (dec *Decoder) ensureAlignment(n int) {
+	p := dec.size - dec.r.Buffered()
+	if s := p % n; s != 0 {
+		dec.r.Discard(n - s)
+	}
 }

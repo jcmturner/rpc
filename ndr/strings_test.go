@@ -38,7 +38,7 @@ func Test_readVaryingString(t *testing.T) {
 	hexStr := TestHeader + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithVaryingString)
-	dec := NewDecoder(bytes.NewReader(b), 1) //TODO why alignment = 4 fails
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -52,7 +52,7 @@ func Test_readConformantVaryingString(t *testing.T) {
 	hexStr := TestHeader + hex.EncodeToString(ac) + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingString)
-	dec := NewDecoder(bytes.NewReader(b), 1) //TODO why alignment = 4 fails
+	dec := NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(a)
 	if err != nil {
 		t.Fatalf("%v", err)
