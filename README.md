@@ -38,7 +38,7 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Uni-dimensional conformant array
 - [x] Multi-dimensional conformant array
 - [x] Uni-dimensional conformant varying array
-- [ ] Multi-dimensional conformant varying array
+- [x] Multi-dimensional conformant varying array
 - [x] Varying string
 - [x] Conformant varying string
 - [ ] Array of strings

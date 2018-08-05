@@ -104,7 +104,10 @@ func multiDimensionalIndexPermutations(l []int) (ps [][]int) {
 
 // fillFixedArray establishes if the fixed array is uni or multi dimensional and then fills it.
 func (dec *Decoder) fillFixedArray(v reflect.Value, tag reflect.StructTag) error {
-	l, _ := parseDimensions(v)
+	l, t := parseDimensions(v)
+	if t.Kind() == reflect.String {
+		tag = reflect.StructTag(subStringArrayTag)
+	}
 	if len(l) < 1 {
 		return errors.New("could not establish dimensions of fixed array")
 	}
@@ -311,7 +314,7 @@ func (dec *Decoder) fillMultiDimensionalVaryingArray(v reflect.Value, t reflect.
 	return nil
 }
 
-// fillVaryingArray establishes if the varying array is uni or multi dimensional and then fills the slice.
+// fillConformantVaryingArray establishes if the varying array is uni or multi dimensional and then fills the slice.
 func (dec *Decoder) fillConformantVaryingArray(v reflect.Value, tag reflect.StructTag) error {
 	d, t := sliceDimensions(v.Type())
 	if d > 1 {
