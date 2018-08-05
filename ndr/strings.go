@@ -49,7 +49,7 @@ func (dec *Decoder) readConformantVaryingString() (string, error) {
 }
 
 func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag) error {
-	d, t := sliceDimensions(v.Type())
+	d, _ := sliceDimensions(v.Type())
 	ndrTag := parseTags(tag)
 	var m []int
 	//var ms int
@@ -69,7 +69,8 @@ func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag) err
 		//ms = int(n)
 	}
 	tag = reflect.StructTag(subStringArrayTag)
-	err := dec.fillMultiDimensionalVaryingArray(v, t, d, tag)
+	err := dec.fillVaryingArray(v, tag)
+	//err := dec.fillMultiDimensionalVaryingArray(v, t, d, tag)
 	if err != nil {
 		return fmt.Errorf("could not read string array: %v", err)
 	}

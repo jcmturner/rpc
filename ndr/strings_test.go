@@ -11,7 +11,7 @@ import (
 
 const (
 	TestStr         = "hello world!"
-	TestStrUTF16Hex = "680065006c006c006f00200077006f0072006c00640021000000"
+	TestStrUTF16Hex = "680065006c006c006f00200077006f0072006c00640021000000" // little endian format
 )
 
 type TestStructWithVaryingString struct {
@@ -20,6 +20,10 @@ type TestStructWithVaryingString struct {
 
 type TestStructWithConformantVaryingString struct {
 	A string `ndr:"conformant,varying"`
+}
+
+type TestStructWithConformantVaryingStringUniArray struct {
+	A []string `ndr:"conformant,varying"`
 }
 
 func Test_uint16SliceToString(t *testing.T) {
@@ -58,4 +62,24 @@ func Test_readConformantVaryingString(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	assert.Equal(t, TestStr, a.A, "value of decoded varying string not as expected")
+}
+
+func Test_readConformantStringUniDimensionalArray(t *testing.T) {
+	ac := make([]byte, 4, 4)
+	binary.LittleEndian.PutUint32(ac, uint32(len(TestStrUTF16Hex)/4))                                                                             // actual count of number of uint16 bytes
+	hexStr := "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex                                                                               // offset(0):actual count:data
+	hexStr = TestHeader + "04000000" + hex.EncodeToString(ac) + "0000000004000000" + hexStr + "0000" + hexStr + "0000" + hexStr + "0000" + hexStr // header:1st dimension count(4):max for all strings:offset for 1st dim:actual for 1st dim:string array elements(4) with offset and actual counts. Need to include some bytes for alignment.
+	b, _ := hex.DecodeString(hexStr)
+	a := new(TestStructWithConformantVaryingStringUniArray)
+	dec := NewDecoder(bytes.NewReader(b))
+	err := dec.Decode(a)
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	assert.Equal(t, 4, len(a.A), "length of string array not as expected")
+	for _, s := range a.A {
+		if s != TestStr {
+			t.Fatalf("string array does not contain the right values")
+		}
+	}
 }
