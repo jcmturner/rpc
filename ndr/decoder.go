@@ -56,6 +56,14 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag) error {
 	}
 	switch v.Kind() {
 	case reflect.Struct:
+		ndrTag := parseTags(tag)
+		if ndrTag.HasValue(TagUnion) {
+			err := dec.readUnion(v, tag)
+			if err != nil {
+				return Errorf("could not fill union: %v", err)
+			}
+			break
+		}
 		for i := 0; i < v.NumField(); i++ {
 			err := dec.fill(v.Field(i), v.Type().Field(i).Tag)
 			if err != nil {

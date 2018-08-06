@@ -41,7 +41,7 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Multi-dimensional conformant varying array
 - [x] Varying string
 - [x] Conformant varying string
-- [ ] Array of strings
+- [x] Array of strings
 - [ ] Union
 - [ ] Pipe
 - [ ] Top level full pointer
