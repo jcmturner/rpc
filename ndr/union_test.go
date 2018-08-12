@@ -20,7 +20,7 @@ type testUnionEncapsulated struct {
 }
 
 type testUnionNonEncapsulated struct {
-	A testUnion `ndr:"union"`
+	A testUnion
 }
 
 type testUnion struct {
@@ -29,8 +29,9 @@ type testUnion struct {
 	Value2 uint16
 }
 
-func (u testUnion) SwitchFunc(tag uint32) string {
-	switch tag {
+func (u testUnion) SwitchFunc(tag interface{}) string {
+	t := tag.(uint32)
+	switch t {
 	case 1:
 		return "Value1"
 	case 2:

@@ -41,6 +41,24 @@ func appendTag(t reflect.StructTag, s string) reflect.StructTag {
 	return reflect.StructTag(ts)
 }
 
+func (t *tags) StructTag() reflect.StructTag {
+	mv := t.Values
+	for key, val := range t.Map {
+		mv = append(mv, key+":"+val)
+	}
+	s := ndrNameSpace + ":" + `"` + strings.Join(mv, ",") + `"`
+	return reflect.StructTag(s)
+}
+
+func (t *tags) delete(s string) {
+	for i, x := range t.Values {
+		if x == s {
+			t.Values = append(t.Values[:i], t.Values[i+1:]...)
+		}
+	}
+	delete(t.Map, s)
+}
+
 func (t *tags) HasValue(s string) bool {
 	for _, v := range t.Values {
 		if v == s {

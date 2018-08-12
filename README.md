@@ -27,10 +27,10 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Unsigned short integer
 - [x] Unsigned long integer
 - [x] Unsigned hyper integer
-- [ ] Signed small integer
-- [ ] Signed short integer
-- [ ] Signed long integer
-- [ ] Signed hyper integer
+- [x] Signed small integer
+- [x] Signed short integer
+- [x] Signed long integer
+- [x] Signed hyper integer
 - [x] Single float
 - [x] Double float
 - [x] Uni-dimensional fixed array
@@ -42,9 +42,5 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Varying string
 - [x] Conformant varying string
 - [x] Array of strings
-- [ ] Union
+- [x] Union
 - [ ] Pipe
-- [ ] Top level full pointer
-- [ ] Top level reference pointer
-- [ ] Embedded full pointer
-- [ ] Embedded reference pointer

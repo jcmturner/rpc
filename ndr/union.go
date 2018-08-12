@@ -8,32 +8,16 @@ import (
 
 // To read a union a struct must be defined that has a field called "Tag" that is of the correct type (integer, char or
 // bool) for the union's descriminating tag value.
-// The struct must also have a method called SwitchFunc that takes the discriminating tag as input and returns a string
-// for the name of the field that should be filled with the selected value.
-// Below is a basic example:
-//
-// type MyUnion struct {
-// 	 Tag uint32 // Can be any type but must be called Tag
-// 	 Value32 uint32
-//	 Value64 uint64
-// }
-//
-// // Note that this method does not have a pointer receiver.
-// func (u MyUnion) SwitchFunc(tag uint32) string {
-//	 switch tag {
-//	 case 64:
-//		 return "Value64"
-//	 case 32:
-//		 return "Value32"
-//	 }
-//	 return ""
-// }
+// The struct must also implement the Union interface.
+
+type Union interface {
+	SwitchFunc(interface{}) string
+}
 
 const (
 	DiscriminatingTagFieldName = "Tag"
 	SelectionFuncName          = "SwitchFunc"
 	TagEncapsulated            = "encapsulated"
-	TagUnion                   = "union"
 )
 
 func (dec *Decoder) readUnion(v reflect.Value, tag reflect.StructTag) error {
@@ -51,7 +35,7 @@ func (dec *Decoder) readUnion(v reflect.Value, tag reflect.StructTag) error {
 	if !ndrTag.HasValue(TagEncapsulated) {
 		dec.r.Discard(int(ut.Type().Size()))
 	}
-	err := dec.fill(ut, utTag)
+	err := dec.fill(ut, utTag, false)
 	if err != nil {
 		return fmt.Errorf("could not fill union's discriminating tag: %v", err)
 	}
@@ -73,7 +57,7 @@ func (dec *Decoder) readUnion(v reflect.Value, tag reflect.StructTag) error {
 		return fmt.Errorf("could not get union's selected value field: %s", f[0].String())
 	}
 	uv := v.FieldByName(f[0].String())
-	err = dec.fill(uv, uvTag)
+	err = dec.fill(uv, uvTag, false)
 	if err != nil {
 		return err
 	}

@@ -76,7 +76,7 @@ func Test_readVaryingString(t *testing.T) {
 func Test_readConformantVaryingString(t *testing.T) {
 	ac := make([]byte, 4, 4)
 	binary.LittleEndian.PutUint32(ac, uint32(len(TestStrUTF16Hex)/4))                                     // actual count of number of uint16 bytes
-	hexStr := TestHeader + hex.EncodeToString(ac) + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:offset(0):actual count:data
+	hexStr := TestHeader + hex.EncodeToString(ac) + "00000000" + hex.EncodeToString(ac) + TestStrUTF16Hex // header:max:offset(0):actual count:data
 	b, _ := hex.DecodeString(hexStr)
 	a := new(TestStructWithConformantVaryingString)
 	dec := NewDecoder(bytes.NewReader(b))

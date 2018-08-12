@@ -30,47 +30,54 @@ func (dec *Decoder) readVaryingString() (string, error) {
 	var t reflect.StructTag
 	err := dec.fillUniDimensionalVaryingArray(v.Elem(), t)
 	if err != nil {
-		return "", fmt.Errorf("could not ready varying string: %v", err)
+		return "", err
 	}
 	s := uint16SliceToString(*a)
 	return s, nil
 }
 
-func (dec *Decoder) readConformantVaryingString() (string, error) {
+func (dec *Decoder) readConformantVaryingString(deferred bool) (string, error) {
 	a := new([]uint16)
 	v := reflect.ValueOf(a)
 	var t reflect.StructTag
-	err := dec.fillUniDimensionalConformantVaryingArray(v.Elem(), t)
+	err := dec.fillUniDimensionalConformantVaryingArray(v.Elem(), t, deferred)
 	if err != nil {
-		return "", fmt.Errorf("could not ready conformant varying string: %v", err)
+		return "", err
 	}
 	s := uint16SliceToString(*a)
 	return s, nil
 }
 
-func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag) error {
+func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag, deferred bool) error {
 	d, _ := sliceDimensions(v.Type())
 	ndrTag := parseTags(tag)
 	var m []int
 	//var ms int
 	if ndrTag.HasValue(TagConformant) {
-		// Array will have max elements
-		for i := 0; i < d; i++ {
-			n, err := dec.readUint32()
-			if err != nil {
-				return fmt.Errorf("could not read max count of string array: %v", err)
+		if deferred {
+			// Array will have max elements
+			for i := 0; i < d; i++ {
+				n, err := dec.readUint32()
+				if err != nil {
+					return fmt.Errorf("could not read max count of string array: %v", err)
+				}
+				m = append(m, int(n))
 			}
-			m = append(m, int(n))
-		}
-		_, err := dec.readUint32()
-		if err != nil {
-			return fmt.Errorf("could not read common max count of string elements in array: %v", err)
+			_, err := dec.readUint32()
+			if err != nil {
+				return fmt.Errorf("could not read common max count of string elements in array: %v", err)
+			}
+		} else {
+			for i := 0; i < d; i++ {
+				m = append(m, int(dec.precedingMax()))
+			}
+			//common max size
+			_ = dec.precedingMax()
 		}
 		//ms = int(n)
 	}
 	tag = reflect.StructTag(subStringArrayTag)
 	err := dec.fillVaryingArray(v, tag)
-	//err := dec.fillMultiDimensionalVaryingArray(v, t, d, tag)
 	if err != nil {
 		return fmt.Errorf("could not read string array: %v", err)
 	}

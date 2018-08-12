@@ -1,6 +1,8 @@
 package ndr
 
 import (
+	"bytes"
+	"encoding/binary"
 	"math"
 )
 
@@ -110,6 +112,66 @@ func (dec *Decoder) readUint64() (uint64, error) {
 		return uint64(0), err
 	}
 	return dec.ch.Endianness.Uint64(b), nil
+}
+
+func (dec *Decoder) readInt8() (int8, error) {
+	dec.ensureAlignment(SizeUint8)
+	b, err := dec.readBytes(SizeUint8)
+	if err != nil {
+		return 0, err
+	}
+	var i int8
+	buf := bytes.NewReader(b)
+	err = binary.Read(buf, dec.ch.Endianness, &i)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
+}
+
+func (dec *Decoder) readInt16() (int16, error) {
+	dec.ensureAlignment(SizeUint16)
+	b, err := dec.readBytes(SizeUint16)
+	if err != nil {
+		return 0, err
+	}
+	var i int16
+	buf := bytes.NewReader(b)
+	err = binary.Read(buf, dec.ch.Endianness, &i)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
+}
+
+func (dec *Decoder) readInt32() (int32, error) {
+	dec.ensureAlignment(SizeUint32)
+	b, err := dec.readBytes(SizeUint32)
+	if err != nil {
+		return 0, err
+	}
+	var i int32
+	buf := bytes.NewReader(b)
+	err = binary.Read(buf, dec.ch.Endianness, &i)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
+}
+
+func (dec *Decoder) readInt64() (int64, error) {
+	dec.ensureAlignment(SizeUint64)
+	b, err := dec.readBytes(SizeUint64)
+	if err != nil {
+		return 0, err
+	}
+	var i int64
+	buf := bytes.NewReader(b)
+	err = binary.Read(buf, dec.ch.Endianness, &i)
+	if err != nil {
+		return 0, err
+	}
+	return i, nil
 }
 
 // https://en.wikipedia.org/wiki/IEEE_754-1985
