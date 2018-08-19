@@ -2,12 +2,13 @@ package ndr
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 )
 
+// Struct tag values
 const (
 	TagConformant = "conformant"
 	TagVarying    = "varying"
@@ -16,13 +17,14 @@ const (
 
 type Decoder struct {
 	//mutex sync.Mutex    // each item must be received atomically
-	r             *bufio.Reader // source of the data
-	size          int           // initial size of bytes in buffer
-	ch            CommonHeader  // NDR common header
-	ph            PrivateHeader // NDR private header
-	deferred      []deferedPtr
-	conformantMax []uint32
-	s             interface{} //pointer to the structure being populated
+	r    *bufio.Reader // source of the data
+	size int           // initial size of bytes in buffer
+	ch   CommonHeader  // NDR common header
+	ph   PrivateHeader // NDR private header
+	//	deferred      []deferedPtr  // structures that are deferred to the end of the byte stream from pointers within the structure
+	conformantMax []uint32    // conformant max values that were moved to the beginning of the structure
+	s             interface{} // pointer to the structure being populated
+	current       []string    // keeps track of the current field being populated
 }
 
 type deferedPtr struct {
@@ -30,6 +32,7 @@ type deferedPtr struct {
 	tag reflect.StructTag
 }
 
+// NewDecoder creates a new instance of a NDR Decoder.
 func NewDecoder(r io.Reader) *Decoder {
 	dec := new(Decoder)
 	dec.r = bufio.NewReader(r)
@@ -38,6 +41,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	return dec
 }
 
+// Decode unmarshals the NDR encoded bytes into the pointer of a struct provided.
 func (dec *Decoder) Decode(s interface{}) error {
 	dec.s = s
 	err := dec.readCommonHeader()
@@ -50,13 +54,47 @@ func (dec *Decoder) Decode(s interface{}) error {
 	}
 	_, err = dec.r.Discard(4) //The next 4 bytes are an RPC unique pointer referent. We just skip these.
 	if err != nil {
-		return Malformed{fmt.Sprintf("unable to process byte stream: %v", err)}
+		return Errorf("unable to process byte stream: %v", err)
 	}
+
+	var localDef []deferedPtr
+	return dec.process(s, reflect.StructTag(""), &localDef)
+}
+
+func (dec *Decoder) process(s interface{}, tag reflect.StructTag, localDef *[]deferedPtr) error {
 	// Scan for conformant fields as their max counts are moved to the beginning
 	// http://pubs.opengroup.org/onlinepubs/9629399/chap14.htm#tagfcjh_37
-	err = dec.conformantScan(s, reflect.StructTag(""))
+	err := dec.scanConformantArrays(s, tag)
 	if err != nil {
-		return fmt.Errorf("error scanning for conformant fields: %v", err)
+		return err
+	}
+	// Recursively fill the struct fields
+	err = dec.fill(s, tag, localDef)
+	if err != nil {
+		return Errorf("could not decode: %v", err)
+	}
+	// Read any deferred referents associated with pointers
+	for _, p := range *localDef {
+		var ld []deferedPtr
+		err = dec.process(p.v, p.tag, &ld)
+		//err = dec.scanConformantArrays(p.v, p.tag)
+		if err != nil {
+			return fmt.Errorf("could not decode deferred referent: %v", err)
+		}
+		//err = dec.fill(p.v, p.tag, true)
+		//if err != nil {
+		//	return fmt.Errorf("error filling deferred pointer referent: %v", err)
+		//}
+	}
+	return nil
+}
+
+// scanConformantArrays scans the structure for embedded conformant fields and captures the maximum element counts for
+// dimensions of the array that are moved to the beginning of the structure.
+func (dec *Decoder) scanConformantArrays(s interface{}, tag reflect.StructTag) error {
+	err := dec.conformantScan(s, tag)
+	if err != nil {
+		return fmt.Errorf("failed to scan for embedded conformant arrays: %v", err)
 	}
 	for i := range dec.conformantMax {
 		dec.conformantMax[i], err = dec.readUint32()
@@ -64,21 +102,15 @@ func (dec *Decoder) Decode(s interface{}) error {
 			return fmt.Errorf("could not read preceding conformant max count index %d: %v", i, err)
 		}
 	}
-	err = dec.fill(s, reflect.StructTag(""), false)
-	if err != nil {
-		return err
-	}
-	// Read any deferred referents from pointers
-	for _, p := range dec.deferred {
-		err = dec.fill(p.v, p.tag, true)
-		if err != nil {
-			return fmt.Errorf("error filling deferred pointer referent: %v", err)
-		}
-	}
 	return nil
 }
 
+// conformantScan inspects the structure's fields for whether they are conformant.
 func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
+	ndrTag := parseTags(tag)
+	if ndrTag.HasValue(TagPointer) {
+		return nil
+	}
 	var v reflect.Value
 	if r, ok := s.(reflect.Value); ok {
 		v = r
@@ -96,14 +128,12 @@ func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
 			}
 		}
 	case reflect.String:
-		ndrTag := parseTags(tag)
-		if ndrTag.HasValue(TagPointer) || !ndrTag.HasValue(TagConformant) {
+		if !ndrTag.HasValue(TagConformant) {
 			break
 		}
 		dec.conformantMax = append(dec.conformantMax, uint32(0))
 	case reflect.Slice:
-		ndrTag := parseTags(tag)
-		if ndrTag.HasValue(TagPointer) || !ndrTag.HasValue(TagConformant) {
+		if !ndrTag.HasValue(TagConformant) {
 			break
 		}
 		d, t := sliceDimensions(v.Type())
@@ -118,7 +148,8 @@ func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
 	return nil
 }
 
-func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, deferred bool) error {
+// fill populates fields with values from the NDR byte stream.
+func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]deferedPtr) error {
 	var v reflect.Value
 	if r, ok := s.(reflect.Value); ok {
 		v = r
@@ -127,99 +158,106 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, deferred bool) er
 			v = reflect.ValueOf(s).Elem()
 		}
 	}
+
 	ndrTag := parseTags(tag)
 	// Pointer so defer filling the referent
 	if ndrTag.HasValue(TagPointer) {
 		dec.r.Discard(4) // discard the 4 bytes of the pointer
 		ndrTag.delete(TagPointer)
 		tag = ndrTag.StructTag()
-		dec.deferred = append(dec.deferred, deferedPtr{v, tag})
+		*localDef = append(*localDef, deferedPtr{v, tag})
 		return nil
 	}
+	// Populate the value from the byte stream
 	switch v.Kind() {
 	case reflect.Struct:
+		dec.current = append(dec.current, v.Type().Name()) //Track the current field being filled
+		// field is a union
 		if v.Type().Implements(reflect.TypeOf(new(Union)).Elem()) {
 			err := dec.readUnion(v, tag)
 			if err != nil {
-				return Errorf("could not fill union: %v", err)
+				return fmt.Errorf("could not fill union field(%s): %v", strings.Join(dec.current, "/"), err)
 			}
 			break
 		}
+		// Go through each field in the struct and recursively fill
 		for i := 0; i < v.NumField(); i++ {
+			dec.current = append(dec.current, v.Type().Field(i).Name) //Track the current field being filled
 			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) {
 				//field is for rawbytes
-				if v.Field(i).Type() != reflect.TypeOf([]byte{}) {
-					return errors.New("cannot fill raw bytes as not a type of []byte")
+				if v.Field(i).Type().Kind() != reflect.Slice || v.Field(i).Type().Elem().Kind() != reflect.Uint8 {
+					return fmt.Errorf("cannot fill raw bytes struct field(%s) as not a type of []byte", strings.Join(dec.current, "/"))
 				}
 				err := dec.readRawBytes(v.Field(i))
 				if err != nil {
-					return Errorf("could not fill raw bytes: %v", err)
+					return fmt.Errorf("could not fill raw bytes struct field(%s): %v", strings.Join(dec.current, "/"), err)
 				}
 			} else {
-				err := dec.fill(v.Field(i), v.Type().Field(i).Tag, deferred)
+				err := dec.fill(v.Field(i), v.Type().Field(i).Tag, localDef)
 				if err != nil {
-					return Errorf("could not fill struct field(%d): %v", i, err)
+					return fmt.Errorf("could not fill struct field(%s): %v", strings.Join(dec.current, "/"), err)
 				}
 			}
+			dec.current = dec.current[:len(dec.current)-1] //This field has been filled so remove it from the current field tracker
 		}
+		dec.current = dec.current[:len(dec.current)-1] //This field has been filled so remove it from the current field tracker
 	case reflect.Bool:
 		i, err := dec.readBool()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint8:
 		i, err := dec.readUint8()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint16:
 		i, err := dec.readUint16()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint32:
 		i, err := dec.readUint32()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Uint64:
 		i, err := dec.readUint64()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.String:
-		ndrTag := parseTags(tag)
 		conformant := ndrTag.HasValue(TagConformant)
-		// strings are always varying so this is assumed
+		// strings are always varying so this is assumed without an explicit tag
 		var s string
 		var err error
 		if conformant {
-			s, err = dec.readConformantVaryingString(deferred)
+			s, err = dec.readConformantVaryingString()
 			if err != nil {
-				return Errorf("could not fill with conformant varying string: %v", err)
+				return fmt.Errorf("could not fill with conformant varying string: %v", err)
 			}
 		} else {
 			s, err = dec.readVaryingString()
 			if err != nil {
-				return Errorf("could not fill with varying string: %v", err)
+				return fmt.Errorf("could not fill with varying string: %v", err)
 			}
 		}
 		v.Set(reflect.ValueOf(s))
 	case reflect.Float32:
 		i, err := dec.readFloat32()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Float64:
 		i, err := dec.readFloat64()
 		if err != nil {
-			return Errorf("could not fill %v: %v", v.Type().Name(), err)
+			return fmt.Errorf("could not fill %v: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Array:
@@ -234,7 +272,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, deferred bool) er
 		_, t := sliceDimensions(v.Type())
 		if t.Kind() == reflect.String && !ndrTag.HasValue(subStringArrayValue) {
 			// String array
-			err := dec.readStringsArray(v, tag, deferred)
+			err := dec.readStringsArray(v, tag)
 			if err != nil {
 				return err
 			}
@@ -242,7 +280,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, deferred bool) er
 		}
 		// varying is assumed as fixed arrays use the Go array type rather than slice
 		if conformant && varying {
-			err := dec.fillConformantVaryingArray(v, tag, deferred)
+			err := dec.fillConformantVaryingArray(v, tag)
 			if err != nil {
 				return err
 			}
@@ -253,17 +291,18 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, deferred bool) er
 			}
 		} else {
 			//default to conformant and not varying
-			err := dec.fillConformantArray(v, tag, deferred)
+			err := dec.fillConformantArray(v, tag)
 			if err != nil {
 				return err
 			}
 		}
 	default:
-		return Errorf("unsupported type")
+		return fmt.Errorf("unsupported type")
 	}
 	return nil
 }
 
+// readBytes returns a number of bytes from the NDR byte stream.
 func (dec *Decoder) readBytes(n int) ([]byte, error) {
 	//TODO make this take an int64 as input to allow for larger values on all systems?
 	b := make([]byte, n, n)

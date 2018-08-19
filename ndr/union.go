@@ -35,7 +35,7 @@ func (dec *Decoder) readUnion(v reflect.Value, tag reflect.StructTag) error {
 	if !ndrTag.HasValue(TagEncapsulated) {
 		dec.r.Discard(int(ut.Type().Size()))
 	}
-	err := dec.fill(ut, utTag, false)
+	err := dec.fill(ut, utTag, &[]deferedPtr{})
 	if err != nil {
 		return fmt.Errorf("could not fill union's discriminating tag: %v", err)
 	}
@@ -57,7 +57,7 @@ func (dec *Decoder) readUnion(v reflect.Value, tag reflect.StructTag) error {
 		return fmt.Errorf("could not get union's selected value field: %s", f[0].String())
 	}
 	uv := v.FieldByName(f[0].String())
-	err = dec.fill(uv, uvTag, false)
+	err = dec.fill(uv, uvTag, &[]deferedPtr{})
 	if err != nil {
 		return err
 	}

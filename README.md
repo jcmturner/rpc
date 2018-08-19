@@ -44,3 +44,42 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Array of strings
 - [x] Union
 - [ ] Pipe
+
+## Structs from IDL
+
+### Is a field a pointer?
+
+### Is an array conformant and/or varying?
+An array is conformant if the IDL definition includes one of the following attributes:
+* min_is
+* max_is
+* size_is
+
+An array is conformant if the IDL definition includes one of the following attributes: 
+* last_is
+* first_is 
+* length_is
+
+#### Examples:
+SubAuthority[] is conformant in the example below:
+```
+ typedef struct _RPC_SID {
+   unsigned char Revision;
+   unsigned char SubAuthorityCount;
+   RPC_SID_IDENTIFIER_AUTHORITY IdentifierAuthority;
+   [size_is(SubAuthorityCount)] unsigned long SubAuthority[];
+ } RPC_SID,
+  *PRPC_SID,
+  *PSID;
+```
+
+Buffer is a pointer to a conformant varying array in the example below:
+```
+ typedef struct _RPC_UNICODE_STRING {
+   unsigned short Length;
+   unsigned short MaximumLength;
+   [size_is(MaximumLength/2), length_is(Length/2)] 
+     WCHAR* Buffer;
+ } RPC_UNICODE_STRING,
+  *PRPC_UNICODE_STRING;
+```
