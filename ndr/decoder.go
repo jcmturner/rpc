@@ -13,6 +13,7 @@ const (
 	TagConformant = "conformant"
 	TagVarying    = "varying"
 	TagPointer    = "pointer"
+	TagPipe       = "pipe"
 )
 
 type Decoder struct {
@@ -269,6 +270,13 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		ndrTag := parseTags(tag)
 		conformant := ndrTag.HasValue(TagConformant)
 		varying := ndrTag.HasValue(TagVarying)
+		if ndrTag.HasValue(TagPipe) {
+			err := dec.fillPipe(v, tag)
+			if err != nil {
+				return err
+			}
+			break
+		}
 		_, t := sliceDimensions(v.Type())
 		if t.Kind() == reflect.String && !ndrTag.HasValue(subStringArrayValue) {
 			// String array

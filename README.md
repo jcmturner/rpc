@@ -43,7 +43,7 @@ If you are aware of and reference test vector sources for NDR encoding please le
 - [x] Conformant varying string
 - [x] Array of strings
 - [x] Union
-- [ ] Pipe
+- [x] Pipe
 
 ## Structs from IDL
 
