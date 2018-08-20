@@ -17,12 +17,12 @@ type RawBytes interface {
 	Size(interface{}) int
 }
 
-func (dec *Decoder) readRawBytes(v reflect.Value) error {
+func (dec *Decoder) readRawBytes(v reflect.Value, parent reflect.Value) error {
 	sf := v.MethodByName(sizeMethod)
 	if !sf.IsValid() {
 		return fmt.Errorf("could not find a method called %s on the implementation of RawBytes", sizeMethod)
 	}
-	in := []reflect.Value{reflect.ValueOf(dec.s)}
+	in := []reflect.Value{parent}
 	f := sf.Call(in)
 	if f[0].Kind() != reflect.Int {
 		return errors.New("the RawBytes size function did not return an integer")

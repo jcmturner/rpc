@@ -55,7 +55,7 @@ An array is conformant if the IDL definition includes one of the following attri
 * max_is
 * size_is
 
-An array is conformant if the IDL definition includes one of the following attributes: 
+An array is varying if the IDL definition includes one of the following attributes: 
 * last_is
 * first_is 
 * length_is
@@ -83,3 +83,5 @@ Buffer is a pointer to a conformant varying array in the example below:
  } RPC_UNICODE_STRING,
   *PRPC_UNICODE_STRING;
 ```
+
+### Is a union encapsulated?

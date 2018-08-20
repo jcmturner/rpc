@@ -184,12 +184,10 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		// Go through each field in the struct and recursively fill
 		for i := 0; i < v.NumField(); i++ {
 			dec.current = append(dec.current, v.Type().Field(i).Name) //Track the current field being filled
-			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) {
+			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) &&
+				v.Field(i).Type().Kind() == reflect.Slice && v.Field(i).Type().Elem().Kind() == reflect.Uint8 {
 				//field is for rawbytes
-				if v.Field(i).Type().Kind() != reflect.Slice || v.Field(i).Type().Elem().Kind() != reflect.Uint8 {
-					return fmt.Errorf("cannot fill raw bytes struct field(%s) as not a type of []byte", strings.Join(dec.current, "/"))
-				}
-				err := dec.readRawBytes(v.Field(i))
+				err := dec.readRawBytes(v.Field(i), v)
 				if err != nil {
 					return fmt.Errorf("could not fill raw bytes struct field(%s): %v", strings.Join(dec.current, "/"), err)
 				}
