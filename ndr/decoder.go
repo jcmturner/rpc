@@ -1,3 +1,4 @@
+// Package NDR provides the ability to unmarshal NDR encoded byte steams into Go data structures
 package ndr
 
 import (

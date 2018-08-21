@@ -1,4 +1,4 @@
-// Package mstypes implements representations of Microsoft types for PAC processing.
+// Package mstypes implements representations of Microsoft types
 package mstypes
 
 import (
