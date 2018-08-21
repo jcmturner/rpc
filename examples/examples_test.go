@@ -59,9 +59,8 @@ func Test_KerbValidationInfo(t *testing.T) {
 	dec := ndr.NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(k)
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Errorf("%v", err)
 	}
-	t.Logf("%+v\n", k)
 	assert.Equal(t, time.Date(2006, 4, 28, 1, 42, 50, 925640100, time.UTC), k.LogOnTime.Time(), "LogOnTime not as expected")
 	assert.Equal(t, time.Date(2185, 7, 21, 23, 34, 33, 709551516, time.UTC), k.LogOffTime.Time(), "LogOffTime not as expected")
 	assert.Equal(t, time.Date(2185, 7, 21, 23, 34, 33, 709551516, time.UTC), k.KickOffTime.Time(), "KickOffTime not as expected")

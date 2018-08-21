@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"strings"
 )
@@ -158,10 +157,16 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 	ndrTag := parseTags(tag)
 	// Pointer so defer filling the referent
 	if ndrTag.HasValue(TagPointer) {
-		dec.r.Discard(4) // discard the 4 bytes of the pointer
+		p, err := dec.readUint32()
+		if err != nil {
+			return fmt.Errorf("could not read pointer: %v", err)
+		}
 		ndrTag.delete(TagPointer)
 		tag = ndrTag.StructTag()
-		*localDef = append(*localDef, deferedPtr{v, tag})
+		if p != 0 {
+			// if pointer is not zero add to the deferred items at end of stream
+			*localDef = append(*localDef, deferedPtr{v, tag})
+		}
 		return nil
 	}
 	// Populate the value from the byte stream
@@ -179,7 +184,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		// Go through each field in the struct and recursively fill
 		for i := 0; i < v.NumField(); i++ {
 			dec.current = append(dec.current, v.Type().Field(i).Name) //Track the current field being filled
-			fmt.Fprintf(os.Stderr, "%s\n", strings.Join(dec.current, "/"))
+			//fmt.Fprintf(os.Stderr, "DEBUG Decoding: %s\n", strings.Join(dec.current, "/"))
 			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) &&
 				v.Field(i).Type().Kind() == reflect.Slice && v.Field(i).Type().Elem().Kind() == reflect.Uint8 {
 				//field is for rawbytes
@@ -232,12 +237,12 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		var s string
 		var err error
 		if conformant {
-			s, err = dec.readConformantVaryingString()
+			s, err = dec.readConformantVaryingString(localDef)
 			if err != nil {
 				return fmt.Errorf("could not fill with conformant varying string: %v", err)
 			}
 		} else {
-			s, err = dec.readVaryingString()
+			s, err = dec.readVaryingString(localDef)
 			if err != nil {
 				return fmt.Errorf("could not fill with varying string: %v", err)
 			}
@@ -256,7 +261,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		}
 		v.Set(reflect.ValueOf(i))
 	case reflect.Array:
-		err := dec.fillFixedArray(v, tag)
+		err := dec.fillFixedArray(v, tag, localDef)
 		if err != nil {
 			return err
 		}
@@ -274,7 +279,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		_, t := sliceDimensions(v.Type())
 		if t.Kind() == reflect.String && !ndrTag.HasValue(subStringArrayValue) {
 			// String array
-			err := dec.readStringsArray(v, tag)
+			err := dec.readStringsArray(v, tag, localDef)
 			if err != nil {
 				return err
 			}
@@ -282,18 +287,18 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		}
 		// varying is assumed as fixed arrays use the Go array type rather than slice
 		if conformant && varying {
-			err := dec.fillConformantVaryingArray(v, tag)
+			err := dec.fillConformantVaryingArray(v, tag, localDef)
 			if err != nil {
 				return err
 			}
 		} else if !conformant && varying {
-			err := dec.fillVaryingArray(v, tag)
+			err := dec.fillVaryingArray(v, tag, localDef)
 			if err != nil {
 				return err
 			}
 		} else {
 			//default to conformant and not varying
-			err := dec.fillConformantArray(v, tag)
+			err := dec.fillConformantArray(v, tag, localDef)
 			if err != nil {
 				return err
 			}

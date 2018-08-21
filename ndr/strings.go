@@ -24,11 +24,11 @@ func uint16SliceToString(a []uint16) string {
 	return string(s)
 }
 
-func (dec *Decoder) readVaryingString() (string, error) {
+func (dec *Decoder) readVaryingString(def *[]deferedPtr) (string, error) {
 	a := new([]uint16)
 	v := reflect.ValueOf(a)
 	var t reflect.StructTag
-	err := dec.fillUniDimensionalVaryingArray(v.Elem(), t)
+	err := dec.fillUniDimensionalVaryingArray(v.Elem(), t, def)
 	if err != nil {
 		return "", err
 	}
@@ -36,11 +36,11 @@ func (dec *Decoder) readVaryingString() (string, error) {
 	return s, nil
 }
 
-func (dec *Decoder) readConformantVaryingString() (string, error) {
+func (dec *Decoder) readConformantVaryingString(def *[]deferedPtr) (string, error) {
 	a := new([]uint16)
 	v := reflect.ValueOf(a)
 	var t reflect.StructTag
-	err := dec.fillUniDimensionalConformantVaryingArray(v.Elem(), t)
+	err := dec.fillUniDimensionalConformantVaryingArray(v.Elem(), t, def)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +48,7 @@ func (dec *Decoder) readConformantVaryingString() (string, error) {
 	return s, nil
 }
 
-func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag) error {
+func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag, def *[]deferedPtr) error {
 	d, _ := sliceDimensions(v.Type())
 	ndrTag := parseTags(tag)
 	var m []int
@@ -62,7 +62,7 @@ func (dec *Decoder) readStringsArray(v reflect.Value, tag reflect.StructTag) err
 		//ms = int(n)
 	}
 	tag = reflect.StructTag(subStringArrayTag)
-	err := dec.fillVaryingArray(v, tag)
+	err := dec.fillVaryingArray(v, tag, def)
 	if err != nil {
 		return fmt.Errorf("could not read string array: %v", err)
 	}
