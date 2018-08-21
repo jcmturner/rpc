@@ -337,13 +337,7 @@ func (dec *Decoder) fillUniDimensionalConformantVaryingArray(v reflect.Value, ta
 		return errors.New("max count is less than the offset plus actual count")
 	}
 	t := v.Type()
-	// TODO commented out these lines based on new understanding of offset
-	//os := t.Elem().Size()
-	//_, err = dec.r.Discard(int(o) * int(os))
-	//if err != nil {
-	//	return fmt.Errorf("could not shift offset to read uni-dimensional varying array: %v", err)
-	//}
-	n := int(m)
+	n := int(s)
 	a := reflect.MakeSlice(t, n, n)
 	for i := int(o); i < n; i++ {
 		err := dec.fill(a.Index(i), tag, def)
