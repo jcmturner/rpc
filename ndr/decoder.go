@@ -59,11 +59,10 @@ func (dec *Decoder) Decode(s interface{}) error {
 		return Errorf("unable to process byte stream: %v", err)
 	}
 
-	var localDef []deferedPtr
-	return dec.process(s, reflect.StructTag(""), &localDef)
+	return dec.process(s, reflect.StructTag(""))
 }
 
-func (dec *Decoder) process(s interface{}, tag reflect.StructTag, localDef *[]deferedPtr) error {
+func (dec *Decoder) process(s interface{}, tag reflect.StructTag) error {
 	// Scan for conformant fields as their max counts are moved to the beginning
 	// http://pubs.opengroup.org/onlinepubs/9629399/chap14.htm#tagfcjh_37
 	err := dec.scanConformantArrays(s, tag)
@@ -71,22 +70,17 @@ func (dec *Decoder) process(s interface{}, tag reflect.StructTag, localDef *[]de
 		return err
 	}
 	// Recursively fill the struct fields
-	err = dec.fill(s, tag, localDef)
+	var localDef []deferedPtr
+	err = dec.fill(s, tag, &localDef)
 	if err != nil {
 		return Errorf("could not decode: %v", err)
 	}
 	// Read any deferred referents associated with pointers
-	for _, p := range *localDef {
-		var ld []deferedPtr
-		err = dec.process(p.v, p.tag, &ld)
-		//err = dec.scanConformantArrays(p.v, p.tag)
+	for _, p := range localDef {
+		err = dec.process(p.v, p.tag)
 		if err != nil {
 			return fmt.Errorf("could not decode deferred referent: %v", err)
 		}
-		//err = dec.fill(p.v, p.tag, true)
-		//if err != nil {
-		//	return fmt.Errorf("error filling deferred pointer referent: %v", err)
-		//}
 	}
 	return nil
 }
