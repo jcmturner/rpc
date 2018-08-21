@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 )
@@ -184,6 +185,7 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 		// Go through each field in the struct and recursively fill
 		for i := 0; i < v.NumField(); i++ {
 			dec.current = append(dec.current, v.Type().Field(i).Name) //Track the current field being filled
+			fmt.Fprintf(os.Stderr, "%s\n", strings.Join(dec.current, "/"))
 			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) &&
 				v.Field(i).Type().Kind() == reflect.Slice && v.Field(i).Type().Elem().Kind() == reflect.Uint8 {
 				//field is for rawbytes

@@ -103,3 +103,35 @@ func TestBasicDecodeOverRun(t *testing.T) {
 		t.Errorf("Expected error for trying to read more than the bytes we have")
 	}
 }
+
+type testEmbeddingPointer struct {
+	A testEmbeddedPointer `ndr:"pointer"`
+	B uint32              // 1
+}
+
+type testEmbeddedPointer struct {
+	C testEmbeddedPointer2 `ndr:"pointer"`
+	D uint32               `ndr:"pointer"` // 2
+	E uint32               // 3
+}
+
+type testEmbeddedPointer2 struct {
+	F uint32 `ndr:"pointer"` // 4
+	G uint32 // 5
+}
+
+func Test_EmbeddedPointers(t *testing.T) {
+	hexStr := TestHeader + "00040002" + "01000000" + "00040002" + "00040002" + "03000000" + "00040002" + "05000000" + "04000000" + "02000000"
+	b, _ := hex.DecodeString(hexStr)
+	ft := new(testEmbeddingPointer)
+	dec := NewDecoder(bytes.NewReader(b))
+	err := dec.Decode(ft)
+	if err != nil {
+		t.Fatalf("error decoding: %v", err)
+	}
+	assert.Equal(t, uint32(1), ft.B)
+	assert.Equal(t, uint32(2), ft.A.D)
+	assert.Equal(t, uint32(3), ft.A.E)
+	assert.Equal(t, uint32(4), ft.A.C.F)
+	assert.Equal(t, uint32(5), ft.A.C.G)
+}
