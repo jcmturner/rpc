@@ -127,7 +127,7 @@ type ClaimTypeUInt64 struct {
 // ClaimTypeString is a claim of type string
 type ClaimTypeString struct {
 	ValueCount uint32
-	Value      []string `ndr:"pointer,conformant,varying"`
+	Value      []LPWSTR `ndr:"pointer,conformant"`
 }
 
 // ClaimTypeBoolean is a claim of type bool
