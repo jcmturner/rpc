@@ -102,6 +102,7 @@ func multiDimensionalIndexPermutations(l []int) (ps [][]int) {
 	return
 }
 
+// precedingMax reads off the next conformant max value
 func (dec *Decoder) precedingMax() uint32 {
 	m := dec.conformantMax[0]
 	dec.conformantMax = dec.conformantMax[1:]
@@ -233,7 +234,7 @@ func (dec *Decoder) fillVaryingArray(v reflect.Value, tag reflect.StructTag, def
 	return nil
 }
 
-//
+// fillUniDimensionalVaryingArray fills the uni-dimensional slice value.
 func (dec *Decoder) fillUniDimensionalVaryingArray(v reflect.Value, tag reflect.StructTag, def *[]deferedPtr) error {
 	o, err := dec.readUint32()
 	if err != nil {
@@ -258,6 +259,9 @@ func (dec *Decoder) fillUniDimensionalVaryingArray(v reflect.Value, tag reflect.
 	return nil
 }
 
+// fillMultiDimensionalVaryingArray fills the multi-dimensional slice value provided from varying array data.
+// The number of dimensions must be specified. This must be less than or equal to the dimensions in the slice for this
+// method not to panic.
 func (dec *Decoder) fillMultiDimensionalVaryingArray(v reflect.Value, t reflect.Type, d int, tag reflect.StructTag, def *[]deferedPtr) error {
 	// Read the offset and actual count of each dimensions from the ndr stream
 	o := make([]int, d, d)
@@ -323,6 +327,7 @@ func (dec *Decoder) fillConformantVaryingArray(v reflect.Value, tag reflect.Stru
 	return nil
 }
 
+// fillUniDimensionalConformantVaryingArray fills the uni-dimensional slice value.
 func (dec *Decoder) fillUniDimensionalConformantVaryingArray(v reflect.Value, tag reflect.StructTag, def *[]deferedPtr) error {
 	m := dec.precedingMax()
 	o, err := dec.readUint32()
@@ -349,6 +354,9 @@ func (dec *Decoder) fillUniDimensionalConformantVaryingArray(v reflect.Value, ta
 	return nil
 }
 
+// fillMultiDimensionalConformantVaryingArray fills the multi-dimensional slice value provided from conformant varying array data.
+// The number of dimensions must be specified. This must be less than or equal to the dimensions in the slice for this
+// method not to panic.
 func (dec *Decoder) fillMultiDimensionalConformantVaryingArray(v reflect.Value, t reflect.Type, d int, tag reflect.StructTag, def *[]deferedPtr) error {
 	// Read the offset and actual count of each dimensions from the ndr stream
 	m := make([]int, d, d)

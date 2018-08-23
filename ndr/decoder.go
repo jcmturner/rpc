@@ -17,6 +17,7 @@ const (
 	TagPipe       = "pipe"
 )
 
+// Decoder unmarshals NDR byte stream data into a Go struct representation
 type Decoder struct {
 	r             *bufio.Reader // source of the data
 	size          int           // initial size of bytes in buffer

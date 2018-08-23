@@ -6,6 +6,7 @@ import (
 	"math"
 )
 
+// Byte sizes of primitive types
 const (
 	SizeBool   = 1
 	SizeChar   = 1

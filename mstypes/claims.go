@@ -50,6 +50,7 @@ type ClaimsSetMetadata struct {
 	ReservedField             []byte `ndr:"pointer,conformant"`
 }
 
+// ClaimsSet reads the ClaimsSet type from the NDR encoded ClaimsSetBytes in the ClaimsSetMetadata
 func (m *ClaimsSetMetadata) ClaimsSet() (c ClaimsSet, err error) {
 	if len(m.ClaimsSetBytes) < 1 {
 		err = errors.New("no bytes available for ClaimsSet")
@@ -71,14 +72,7 @@ type ClaimsSet struct {
 	ClaimsArrays      []ClaimsArray `ndr:"pointer,conformant"`
 	ReservedType      uint16
 	ReservedFieldSize uint32
-	ReservedField     ClaimsSetReservedFieldBytes `ndr:"pointer"`
-}
-
-type ClaimsSetReservedFieldBytes []byte
-
-func (b ClaimsSetReservedFieldBytes) Size(p interface{}) int {
-	c := p.(ClaimsSet)
-	return int(c.ReservedFieldSize)
+	ReservedField     []byte `ndr:"pointer,conformant"`
 }
 
 // ClaimsArray implements https://msdn.microsoft.com/en-us/library/hh536458.aspx
@@ -98,6 +92,7 @@ type ClaimEntry struct {
 	TypeBool   ClaimTypeBoolean `ndr:"unionField"`
 }
 
+// SwitchFunc is the ClaimEntry union field selection function
 func (u ClaimEntry) SwitchFunc(_ interface{}) string {
 	switch u.Type {
 	case ClaimTypeIDInt64:

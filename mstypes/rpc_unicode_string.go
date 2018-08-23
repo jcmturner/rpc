@@ -7,6 +7,7 @@ type RPCUnicodeString struct {
 	Value         string `ndr:"pointer,conformant,varying"`
 }
 
+// String returns the RPCUnicodeString string value
 func (r RPCUnicodeString) String() string {
 	return r.Value
 }
