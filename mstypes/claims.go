@@ -41,27 +41,13 @@ func (b EncodedBlob) Size(c interface{}) int {
 
 // ClaimsSetMetadata implements https://msdn.microsoft.com/en-us/library/hh554073.aspx
 type ClaimsSetMetadata struct {
-	claimsSetSize             uint32
-	ClaimsSetBytes            ClaimsSetBytes `ndr:"pointer"`
-	CompressionFormat         uint16         // Enum see constants for options
-	uncompressedClaimsSetSize uint32
+	ClaimsSetSize             uint32
+	ClaimsSetBytes            []byte `ndr:"pointer,conformant"`
+	CompressionFormat         uint16 // Enum see constants for options
+	UncompressedClaimsSetSize uint32
 	ReservedType              uint16
-	reservedFieldSize         uint32
-	ReservedField             ClaimsSetMetadataReservedFieldBytes `ndr:"pointer"`
-}
-
-type ClaimsSetBytes []byte
-
-func (b ClaimsSetBytes) Size(p interface{}) int {
-	c := p.(ClaimsSetMetadata)
-	return int(c.claimsSetSize)
-}
-
-type ClaimsSetMetadataReservedFieldBytes []byte
-
-func (b ClaimsSetMetadataReservedFieldBytes) Size(p interface{}) int {
-	c := p.(ClaimsSetMetadata)
-	return int(c.reservedFieldSize)
+	ReservedFieldSize         uint32
+	ReservedField             []byte `ndr:"pointer,conformant"`
 }
 
 func (m *ClaimsSetMetadata) ClaimsSet() (c ClaimsSet, err error) {
@@ -84,7 +70,7 @@ type ClaimsSet struct {
 	ClaimsArrayCount  uint32
 	ClaimsArrays      []ClaimsArray `ndr:"pointer,conformant"`
 	ReservedType      uint16
-	reservedFieldSize uint32
+	ReservedFieldSize uint32
 	ReservedField     ClaimsSetReservedFieldBytes `ndr:"pointer"`
 }
 
@@ -92,29 +78,28 @@ type ClaimsSetReservedFieldBytes []byte
 
 func (b ClaimsSetReservedFieldBytes) Size(p interface{}) int {
 	c := p.(ClaimsSet)
-	return int(c.reservedFieldSize)
+	return int(c.ReservedFieldSize)
 }
 
 // ClaimsArray implements https://msdn.microsoft.com/en-us/library/hh536458.aspx
 type ClaimsArray struct {
 	ClaimsSourceType uint16
 	ClaimsCount      uint32
-	ClaimEntries     []ClaimEntry `ndr:"pointer,encapsulated"`
+	ClaimEntries     []ClaimEntry `ndr:"pointer,conformant"`
 }
 
 // ClaimEntry is a NDR union that implements https://msdn.microsoft.com/en-us/library/hh536374.aspx
 type ClaimEntry struct {
-	ID         string
-	Tag        uint16
-	TypeInt64  ClaimTypeInt64
-	TypeUInt64 ClaimTypeUInt64
-	TypeString ClaimTypeString
-	TypeBool   ClaimTypeBoolean
+	ID         string           `ndr:"pointer,conformant,varying"`
+	Type       uint16           `ndr:"unionTag"`
+	TypeInt64  ClaimTypeInt64   `ndr:"unionField"`
+	TypeUInt64 ClaimTypeUInt64  `ndr:"unionField"`
+	TypeString ClaimTypeString  `ndr:"unionField"`
+	TypeBool   ClaimTypeBoolean `ndr:"unionField"`
 }
 
-func (u ClaimEntry) SwitchFunc(tag interface{}) string {
-	t := tag.(uint16)
-	switch t {
+func (u ClaimEntry) SwitchFunc(_ interface{}) string {
+	switch u.Type {
 	case ClaimTypeIDInt64:
 		return "TypeInt64"
 	case ClaimTypeIDUInt64:
@@ -142,7 +127,7 @@ type ClaimTypeUInt64 struct {
 // ClaimTypeString is a claim of type string
 type ClaimTypeString struct {
 	ValueCount uint32
-	Value      []string `ndr:"pointer,conformant"`
+	Value      []string `ndr:"pointer,conformant,varying"`
 }
 
 // ClaimTypeBoolean is a claim of type bool

@@ -18,15 +18,13 @@ const (
 )
 
 type Decoder struct {
-	//mutex sync.Mutex    // each item must be received atomically
-	r    *bufio.Reader // source of the data
-	size int           // initial size of bytes in buffer
-	ch   CommonHeader  // NDR common header
-	ph   PrivateHeader // NDR private header
-	//	deferred      []deferedPtr  // structures that are deferred to the end of the byte stream from pointers within the structure
-	conformantMax []uint32    // conformant max values that were moved to the beginning of the structure
-	s             interface{} // pointer to the structure being populated
-	current       []string    // keeps track of the current field being populated
+	r             *bufio.Reader // source of the data
+	size          int           // initial size of bytes in buffer
+	ch            CommonHeader  // NDR common header
+	ph            PrivateHeader // NDR private header
+	conformantMax []uint32      // conformant max values that were moved to the beginning of the structure
+	s             interface{}   // pointer to the structure being populated
+	current       []string      // keeps track of the current field being populated
 }
 
 type deferedPtr struct {
@@ -107,14 +105,7 @@ func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
 	if ndrTag.HasValue(TagPointer) {
 		return nil
 	}
-	var v reflect.Value
-	if r, ok := s.(reflect.Value); ok {
-		v = r
-	} else {
-		if reflect.ValueOf(s).Kind() == reflect.Ptr {
-			v = reflect.ValueOf(s).Elem()
-		}
-	}
+	v := getReflectValue(s)
 	switch v.Kind() {
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
@@ -144,9 +135,25 @@ func (dec *Decoder) conformantScan(s interface{}, tag reflect.StructTag) error {
 	return nil
 }
 
-// fill populates fields with values from the NDR byte stream.
-func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]deferedPtr) error {
-	var v reflect.Value
+func (dec *Decoder) isPointer(v reflect.Value, tag reflect.StructTag, def *[]deferedPtr) (bool, error) {
+	// Pointer so defer filling the referent
+	ndrTag := parseTags(tag)
+	if ndrTag.HasValue(TagPointer) {
+		p, err := dec.readUint32()
+		if err != nil {
+			return true, fmt.Errorf("could not read pointer: %v", err)
+		}
+		ndrTag.delete(TagPointer)
+		if p != 0 {
+			// if pointer is not zero add to the deferred items at end of stream
+			*def = append(*def, deferedPtr{v, ndrTag.StructTag()})
+		}
+		return true, nil
+	}
+	return false, nil
+}
+
+func getReflectValue(s interface{}) (v reflect.Value) {
 	if r, ok := s.(reflect.Value); ok {
 		v = r
 	} else {
@@ -154,47 +161,77 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 			v = reflect.ValueOf(s).Elem()
 		}
 	}
+	return
+}
 
-	ndrTag := parseTags(tag)
-	// Pointer so defer filling the referent
-	if ndrTag.HasValue(TagPointer) {
-		p, err := dec.readUint32()
-		if err != nil {
-			return fmt.Errorf("could not read pointer: %v", err)
-		}
-		ndrTag.delete(TagPointer)
-		tag = ndrTag.StructTag()
-		if p != 0 {
-			// if pointer is not zero add to the deferred items at end of stream
-			*localDef = append(*localDef, deferedPtr{v, tag})
-		}
+// fill populates fields with values from the NDR byte stream.
+func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]deferedPtr) error {
+	v := getReflectValue(s)
+
+	//// Pointer so defer filling the referent
+	ptr, err := dec.isPointer(v, tag, localDef)
+	if err != nil {
+		return fmt.Errorf("could not process struct field(%s): %v", strings.Join(dec.current, "/"), err)
+	}
+	if ptr {
 		return nil
 	}
+
 	// Populate the value from the byte stream
 	switch v.Kind() {
 	case reflect.Struct:
 		dec.current = append(dec.current, v.Type().Name()) //Track the current field being filled
-		// field is a union
-		if v.Type().Implements(reflect.TypeOf(new(Union)).Elem()) {
-			err := dec.readUnion(v, tag)
-			if err != nil {
-				return fmt.Errorf("could not fill union field(%s): %v", strings.Join(dec.current, "/"), err)
-			}
-			break
-		}
+		// in case struct is a union, track this and the selected union field for efficiency
+		var unionTag reflect.Value
+		var unionField string // field to fill if struct is a union
 		// Go through each field in the struct and recursively fill
 		for i := 0; i < v.NumField(); i++ {
-			dec.current = append(dec.current, v.Type().Field(i).Name) //Track the current field being filled
+			fieldName := v.Type().Field(i).Name
+			dec.current = append(dec.current, fieldName) //Track the current field being filled
 			//fmt.Fprintf(os.Stderr, "DEBUG Decoding: %s\n", strings.Join(dec.current, "/"))
+			structTag := v.Type().Field(i).Tag
+			ndrTag := parseTags(structTag)
+
+			// Union handling
+			if !unionTag.IsValid() {
+				// Is this field a union tag?
+				unionTag = dec.isUnion(v.Field(i), structTag)
+			} else {
+				// What is the selected field value of the union if we don't already know
+				if unionField == "" {
+					unionField, err = unionSelectedField(v, unionTag)
+					if err != nil {
+						return fmt.Errorf("could not determine selected union value field for %s with discriminat"+
+							" tag %s: %v", v.Type().Name(), unionTag, err)
+					}
+				}
+				if ndrTag.HasValue(TagUnionField) && fieldName != unionField {
+					// is a union and this field has not been selected so will skip it.
+					dec.current = dec.current[:len(dec.current)-1] //This field has been skipped so remove it from the current field tracker
+					continue
+				}
+			}
+
+			// Check if field is a pointer
 			if v.Field(i).Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) &&
 				v.Field(i).Type().Kind() == reflect.Slice && v.Field(i).Type().Elem().Kind() == reflect.Uint8 {
 				//field is for rawbytes
-				err := dec.readRawBytes(v.Field(i), v)
+				structTag, err = addSizeToTag(v, v.Field(i), structTag)
 				if err != nil {
-					return fmt.Errorf("could not fill raw bytes struct field(%s): %v", strings.Join(dec.current, "/"), err)
+					return fmt.Errorf("could not get rawbytes field(%s) size: %v", strings.Join(dec.current, "/"), err)
+				}
+				ptr, err := dec.isPointer(v.Field(i), structTag, localDef)
+				if err != nil {
+					return fmt.Errorf("could not process struct field(%s): %v", strings.Join(dec.current, "/"), err)
+				}
+				if !ptr {
+					err := dec.readRawBytes(v.Field(i), structTag)
+					if err != nil {
+						return fmt.Errorf("could not fill raw bytes struct field(%s): %v", strings.Join(dec.current, "/"), err)
+					}
 				}
 			} else {
-				err := dec.fill(v.Field(i), v.Type().Field(i).Tag, localDef)
+				err := dec.fill(v.Field(i), structTag, localDef)
 				if err != nil {
 					return fmt.Errorf("could not fill struct field(%s): %v", strings.Join(dec.current, "/"), err)
 				}
@@ -232,7 +269,32 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
 		}
 		v.Set(reflect.ValueOf(i))
+	case reflect.Int8:
+		i, err := dec.readInt8()
+		if err != nil {
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
+		}
+		v.Set(reflect.ValueOf(i))
+	case reflect.Int16:
+		i, err := dec.readInt16()
+		if err != nil {
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
+		}
+		v.Set(reflect.ValueOf(i))
+	case reflect.Int32:
+		i, err := dec.readInt32()
+		if err != nil {
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
+		}
+		v.Set(reflect.ValueOf(i))
+	case reflect.Int64:
+		i, err := dec.readInt64()
+		if err != nil {
+			return fmt.Errorf("could not fill %s: %v", v.Type().Name(), err)
+		}
+		v.Set(reflect.ValueOf(i))
 	case reflect.String:
+		ndrTag := parseTags(tag)
 		conformant := ndrTag.HasValue(TagConformant)
 		// strings are always varying so this is assumed without an explicit tag
 		var s string
@@ -267,6 +329,14 @@ func (dec *Decoder) fill(s interface{}, tag reflect.StructTag, localDef *[]defer
 			return err
 		}
 	case reflect.Slice:
+		if v.Type().Implements(reflect.TypeOf(new(RawBytes)).Elem()) && v.Type().Elem().Kind() == reflect.Uint8 {
+			//field is for rawbytes
+			err := dec.readRawBytes(v, tag)
+			if err != nil {
+				return fmt.Errorf("could not fill raw bytes struct field(%s): %v", strings.Join(dec.current, "/"), err)
+			}
+			break
+		}
 		ndrTag := parseTags(tag)
 		conformant := ndrTag.HasValue(TagConformant)
 		varying := ndrTag.HasValue(TagVarying)

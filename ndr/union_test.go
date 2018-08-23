@@ -16,20 +16,29 @@ const (
 )
 
 type testUnionEncapsulated struct {
-	A testUnion `ndr:"union,encapsulated"`
+	Tag    uint32 `ndr:"unionTag,encapsulated"`
+	Value1 uint8  `ndr:"unionField"`
+	Value2 uint16 `ndr:"unionField"`
 }
 
 type testUnionNonEncapsulated struct {
-	A testUnion
+	Tag    uint32 `ndr:"unionTag"`
+	Value1 uint8  `ndr:"unionField"`
+	Value2 uint16 `ndr:"unionField"`
 }
 
-type testUnion struct {
-	Tag    uint32
-	Value1 uint8
-	Value2 uint16
+func (u testUnionEncapsulated) SwitchFunc(tag interface{}) string {
+	t := tag.(uint32)
+	switch t {
+	case 1:
+		return "Value1"
+	case 2:
+		return "Value2"
+	}
+	return ""
 }
 
-func (u testUnion) SwitchFunc(tag interface{}) string {
+func (u testUnionNonEncapsulated) SwitchFunc(tag interface{}) string {
 	t := tag.(uint32)
 	switch t {
 	case 1:
@@ -60,9 +69,9 @@ func Test_readUnionEncapsulated(t *testing.T) {
 		if err != nil {
 			t.Fatalf("test %d: %v", i+1, err)
 		}
-		assert.Equal(t, test.Tag, a.A.Tag, "Tag value not as expected for test: %d", i+1)
-		assert.Equal(t, test.V1, a.A.Value1, "Value1 not as expected for test: %d", i+1)
-		assert.Equal(t, test.V2, a.A.Value2, "Value2 value not as expected for test: %d", i+1)
+		assert.Equal(t, test.Tag, a.Tag, "Tag value not as expected for test: %d", i+1)
+		assert.Equal(t, test.V1, a.Value1, "Value1 not as expected for test: %d", i+1)
+		assert.Equal(t, test.V2, a.Value2, "Value2 value not as expected for test: %d", i+1)
 
 	}
 }
@@ -87,9 +96,9 @@ func Test_readUnionNonEncapsulated(t *testing.T) {
 		if err != nil {
 			t.Fatalf("test %d: %v", i+1, err)
 		}
-		assert.Equal(t, test.Tag, a.A.Tag, "Tag value not as expected for test: %d", i+1)
-		assert.Equal(t, test.V1, a.A.Value1, "Value1 not as expected for test: %d", i+1)
-		assert.Equal(t, test.V2, a.A.Value2, "Value2 value not as expected for test: %d", i+1)
+		assert.Equal(t, test.Tag, a.Tag, "Tag value not as expected for test: %d", i+1)
+		assert.Equal(t, test.V1, a.Value1, "Value1 not as expected for test: %d", i+1)
+		assert.Equal(t, test.V2, a.Value2, "Value2 value not as expected for test: %d", i+1)
 
 	}
 }
