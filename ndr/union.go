@@ -15,6 +15,7 @@ type Union interface {
 	SwitchFunc(t interface{}) string
 }
 
+// Union related constants such as struct tag values
 const (
 	unionSelectionFuncName = "SwitchFunc"
 	TagEncapsulated        = "encapsulated"

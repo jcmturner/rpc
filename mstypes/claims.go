@@ -32,8 +32,10 @@ type ClaimsBlob struct {
 	EncodedBlob EncodedBlob
 }
 
+// EncodedBlob are the bytes of the encoded Claims
 type EncodedBlob []byte
 
+// Size returns the size of the bytes of the encoded Claims
 func (b EncodedBlob) Size(c interface{}) int {
 	cb := c.(ClaimsBlob)
 	return int(cb.Size)
