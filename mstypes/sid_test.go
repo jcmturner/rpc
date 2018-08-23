@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/jcmturner/rpc/ndr"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/jcmturner/rpc.v1/ndr"
 )
 
 type testSIDStruct struct {

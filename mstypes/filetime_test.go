@@ -3,8 +3,8 @@ package mstypes
 import (
 	"bytes"
 	"encoding/hex"
-	"github.com/jcmturner/rpc/ndr"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/jcmturner/rpc.v1/ndr"
 	"testing"
 	"time"
 )

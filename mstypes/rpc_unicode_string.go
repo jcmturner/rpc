@@ -8,6 +8,6 @@ type RPCUnicodeString struct {
 }
 
 // String returns the RPCUnicodeString string value
-func (r RPCUnicodeString) String() string {
+func (r *RPCUnicodeString) String() string {
 	return r.Value
 }

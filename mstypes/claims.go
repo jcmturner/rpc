@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/jcmturner/rpc/ndr"
+	"gopkg.in/jcmturner/rpc.v1/ndr"
 )
 
 // Compression format assigned numbers.

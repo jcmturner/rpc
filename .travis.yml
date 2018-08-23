@@ -7,7 +7,7 @@ go:
 - 1.10.x
 - master
 
-go_import_path: gopkg.in/jcmturner/rpc.v0
+go_import_path: gopkg.in/jcmturner/rpc.v1
 
 before_script:
 - GO_FILES=$(find . -iname '*.go' -type f | grep -v /vendor/)
