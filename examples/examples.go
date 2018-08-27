@@ -3,6 +3,7 @@ package examples
 
 import "gopkg.in/jcmturner/rpc.v1/mstypes"
 
+// KerbValidationInfo
 type KerbValidationInfo struct {
 	LogOnTime              mstypes.FileTime
 	LogOffTime             mstypes.FileTime
