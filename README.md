@@ -5,15 +5,6 @@ This project relates to [CDE 1.1: Remote Procedure Call](http://pubs.opengroup.o
 
 It is a partial implementation that mainly focuses on unmarshaling NDR encoded byte streams into Go structures.
 
-To get the package, execute:
-```
-go get -d github.com/jcmturner/rpc/...
-```
-To import this package, add the following line to your code:
-```go
-import "github.com/jcmturner/rpc/<sub package>"
-```
-
 ## Help Wanted
 **Reference test vectors needed**: It has been difficult to implement due to a lack of reference test byte streams in the 
 standards documentation. Test driven development has been extremely challenging without these.
