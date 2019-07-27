@@ -2,17 +2,20 @@ package mstypes
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
+	"fmt"
 
-	"gopkg.in/jcmturner/rpc.v1/ndr"
+	"github.com/jcmturner/rpc/ndr"
+	"golang.org/x/net/http2/hpack"
 )
 
-// Compression format assigned numbers.
+// Compression format assigned numbers. https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-xca/a8b7cb0a-92a6-4187-a23b-5e14273b96f8
 const (
 	CompressionFormatNone       uint16 = 0
-	CompressionFormatLZNT1      uint16 = 2
-	CompressionFormatXPress     uint16 = 3
-	CompressionFormatXPressHuff uint16 = 4
+	CompressionFormatLZNT1      uint16 = 2 // LZNT1 aka ntfs compression
+	CompressionFormatXPress     uint16 = 3 // plain LZ77
+	CompressionFormatXPressHuff uint16 = 4 // LZ77+Huffman - The Huffman variant of the XPRESS compression format uses LZ77-style dictionary compression combined with Huffman coding.
 )
 
 // ClaimsSourceTypeAD https://msdn.microsoft.com/en-us/library/hh553809.aspx
@@ -59,9 +62,24 @@ func (m *ClaimsSetMetadata) ClaimsSet() (c ClaimsSet, err error) {
 		return
 	}
 	// TODO switch statement to decompress ClaimsSetBytes
-	if m.CompressionFormat != CompressionFormatNone {
-		err = errors.New("compressed ClaimsSet not currently supported")
+	switch m.CompressionFormat {
+	case CompressionFormatLZNT1:
+		s := hex.EncodeToString(m.ClaimsSetBytes)
+		err = fmt.Errorf("ClaimsSet compressed, format LZNT1 not currently supported: %s", s)
 		return
+	case CompressionFormatXPress:
+		s := hex.EncodeToString(m.ClaimsSetBytes)
+		err = fmt.Errorf("ClaimsSet compressed, format XPress not currently supported: %s", s)
+		return
+	case CompressionFormatXPressHuff:
+		var b []byte
+		buff := bytes.NewBuffer(b)
+		_, e := hpack.HuffmanDecode(buff, m.ClaimsSetBytes)
+		if e != nil {
+			err = fmt.Errorf("error deflating: %v", e)
+			return
+		}
+		m.ClaimsSetBytes = buff.Bytes()
 	}
 	dec := ndr.NewDecoder(bytes.NewReader(m.ClaimsSetBytes))
 	err = dec.Decode(&c)
