@@ -81,3 +81,4 @@ Buffer is a pointer to a conformant varying array in the example below:
 ```
 
 ### Is a union encapsulated?
+
