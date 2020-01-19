@@ -1,5 +1,11 @@
 # RPC
-[![GoDoc](https://godoc.org/github.com/jcmturner/rpc?status.svg)](https://godoc.org/github.com/jcmturner/rpc) [![Go Report Card](https://goreportcard.com/badge/github.com/jcmturner/rpc)](https://goreportcard.com/report/github.com/jcmturner/rpc) [![Build Status](https://travis-ci.org/jcmturner/rpc.svg?branch=master)](https://travis-ci.org/jcmturner/rpc)
+
+This project has now been converted to use Go modules. Please refer to the latest major version sub directory.
+This follows the practice outlines at https://blog.golang.org/v2-go-modules
+
+[![Version](https://img.shields.io/github/v/release/jcmturner/rpc?label=Version&sort=semver)](https://github.com/jcmturner/rpc/releases)
+
+
 
 This project relates to [CDE 1.1: Remote Procedure Call](http://pubs.opengroup.org/onlinepubs/9629399/)
 
