@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jcmturner/rpc/ndr"
+	"github.com/jcmturner/rpc/v2/ndr"
 	"golang.org/x/net/http2/hpack"
 )
 

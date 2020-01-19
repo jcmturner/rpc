@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/jcmturner/rpc/ndr"
+	"github.com/jcmturner/rpc/v2/ndr"
 	"github.com/stretchr/testify/assert"
 )
 

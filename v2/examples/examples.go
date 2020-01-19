@@ -1,7 +1,7 @@
 // Package examples provides example decoding of NDR byte streams
 package examples
 
-import "github.com/jcmturner/rpc/mstypes"
+import "github.com/jcmturner/rpc/v2/mstypes"
 
 // KerbValidationInfo
 type KerbValidationInfo struct {

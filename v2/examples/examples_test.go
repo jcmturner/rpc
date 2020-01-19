@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jcmturner/rpc/mstypes"
-	"github.com/jcmturner/rpc/ndr"
+	"github.com/jcmturner/rpc/v2/mstypes"
+	"github.com/jcmturner/rpc/v2/ndr"
 	"github.com/stretchr/testify/assert"
 )
 
