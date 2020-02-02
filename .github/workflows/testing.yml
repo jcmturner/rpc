@@ -33,21 +33,19 @@ jobs:
           test -z $(gofmt -s -d -l -e $GO_FILES | tee /dev/fd/2 | xargs | sed 's/\s//g')
         id: gofmt
 
-      - name: Copy into GOPATH
-        run: |
-          mkdir -p ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
-          cp -r $GITHUB_WORKSPACE/*  ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
-        id: copyToGOPATH
+#      - name: Copy into GOPATH
+#        run: |
+#          mkdir -p ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
+#          cp -r $GITHUB_WORKSPACE/*  ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
+#        id: copyToGOPATH
 
       - name: Go vet
         run: |
-          cd ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
-          go vet ./...
+          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         id: govet
 
       - name: Get dependencies
         run: |
-          cd ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
           go get -v -t -d ./...
         id: goGet
 
@@ -59,7 +57,6 @@ jobs:
 
       - name: Unit tests (32bit)
         run: |
-          cd ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
           go test $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         env:
           GOARCH: 386
