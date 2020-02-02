@@ -36,7 +36,7 @@ jobs:
       - name: Go vet
         run: |
           go vet ./...
-        id: gofmt
+        id: govet
 
       - name: Get dependencies
         run: |

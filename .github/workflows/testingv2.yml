@@ -35,7 +35,7 @@ jobs:
       - name: Go vet
         run: |
           go vet ./...
-        id: gofmt
+        id: govet
 
       - name: Unit tests
         run: |
