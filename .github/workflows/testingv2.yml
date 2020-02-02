@@ -34,19 +34,20 @@ jobs:
 
       - name: Go vet
         run: |
-          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+          cd ${GITHUB_WORKFLOW}
+          go vet ./...
         id: govet
 
       - name: Unit tests
         run: |
           cd ${GITHUB_WORKFLOW}
-          go test -race $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+          go test -race ./...
         id: unitTests
 
       - name: Unit tests (32bit)
         run: |
           cd ${GITHUB_WORKFLOW}
-          go test $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+          go test ./...
         env:
           GOARCH: 386
         id: unitTest32
