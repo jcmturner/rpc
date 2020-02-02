@@ -35,8 +35,8 @@ jobs:
 
       - name: Copy into GOPATH
         run: |
-          mkdir -p /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
-          cp -r $GITHUB_WORKSPACE/*  ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
+          mkdir -p /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
+          cp -r $GITHUB_WORKSPACE/*  /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
         id: copyToGOPATH
 
       - name: Go vet
