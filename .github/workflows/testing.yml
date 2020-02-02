@@ -39,17 +39,17 @@ jobs:
           cp -r $GITHUB_WORKSPACE/*  /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
         id: copyToGOPATH
 
-      - name: Go vet
-        run: |
-          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
-          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
-        id: govet
-
       - name: Get dependencies
         run: |
           cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
           go get -v -t -d ./...
         id: goGet
+
+      - name: Go vet
+        run: |
+          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
+          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
+        id: govet
 
       - name: Unit tests
         run: |
