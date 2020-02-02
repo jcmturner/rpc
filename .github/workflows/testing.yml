@@ -34,10 +34,10 @@ jobs:
         id: gofmt
 
       - name: Copy into GOPATH
-          run: |
-            mkdir -p ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
-            cp -r $GITHUB_WORKSPACE/*  ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
-          id: copyToGOPATH
+        run: |
+          mkdir -p ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
+          cp -r $GITHUB_WORKSPACE/*  ${GOPATH}/src/github.com/${GITHUB_REPOSITORY}
+        id: copyToGOPATH
 
       - name: Go vet
         run: |
