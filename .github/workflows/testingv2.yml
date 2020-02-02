@@ -34,7 +34,7 @@ jobs:
 
       - name: Go vet
         run: |
-          go vet ./...
+          go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         id: govet
 
       - name: Unit tests
