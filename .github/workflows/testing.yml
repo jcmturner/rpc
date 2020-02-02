@@ -41,25 +41,25 @@ jobs:
 
       - name: Get dependencies
         run: |
-          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
+          cd /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
           go get -v -t -d ./...
         id: goGet
 
       - name: Go vet
         run: |
-          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
+          cd /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
           go vet $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         id: govet
 
       - name: Unit tests
         run: |
-          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
+          cd /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
           go test -race $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         id: unitTests
 
       - name: Unit tests (32bit)
         run: |
-          cd /home/runner/go//src/github.com/${GITHUB_REPOSITORY}
+          cd /home/runner/go/src/github.com/${GITHUB_REPOSITORY}
           go test $(go list ./... | grep -E -v '/v[0-9]+' | grep -v /vendor/)
         env:
           GOARCH: 386
